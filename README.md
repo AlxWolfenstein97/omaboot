@@ -26,7 +26,7 @@ third-party installs all work as long as they have a `colors.toml`.
 | Zero extra assets | No per-theme Limine art. Colours come from `colors.toml` alone. |
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
 | Illustrative mockups | Centered Limine-ish chrome. **Not** a real boot framebuffer — Limine has no headless renderer. |
-| Carousel-safe | Mockups match the Style tile aspect (~768×475) so edge text is not cropped. |
+| Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size) with ~8% side inset so the 768×475 tile crop does not shave the subject. |
 | Slow pickers are OK | Warming every theme PNG takes a moment; that is the cost of generating previews instead of bundling assets. |
 
 True WYSIWYG would need QEMU screenshots or extra art per theme — that narrows

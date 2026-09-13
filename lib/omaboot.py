@@ -502,9 +502,12 @@ def branding_label(existing_conf: str | None = None) -> str:
     return "Omarchy Bootloader"
 
 
-# Style carousel selected tile is 768×475 (~1.62). Match that aspect so
-# PreserveAspectCrop does not shave left/right the way 16:9 sources do.
-MOCKUP_SIZE = (1536, 950)
+# omarchy-menu-images thumbnails every source to 1536×864 (16:9) with
+# smartcrop BEFORE the Style carousel shows it in a 768×475 tile. Matching
+# that size avoids a second crop; keep content inside ~8% side margins so
+# PreserveAspectCrop on the tile does not shave the subject.
+MOCKUP_SIZE = (1536, 864)
+SAFE_X = 120
 
 
 def render_mockup(
@@ -515,8 +518,8 @@ def render_mockup(
 ) -> Path:
     """Fake Limine interface: centered branding, menu rows, palette strip.
 
-    Theme name is the picker label — keep chrome in the middle safe zone so
-    the Style carousel does not crop important text.
+    Theme name is the picker label — keep chrome inside the horizontal safe
+    zone that survives the Style carousel crop.
     """
     w, h = size
     bg = palette["background"]
@@ -529,18 +532,17 @@ def render_mockup(
     img = Image.new("RGB", size, hex_to_rgb(bg))
     draw = ImageDraw.Draw(img)
 
-    font_sm = try_font(24)
-    font_lg = try_font(40)
-    font_xl = try_font(52)
+    font_sm = try_font(22)
+    font_lg = try_font(36)
+    font_xl = try_font(48)
 
-    # Centered column — mirrors Limine without hugging the image edges.
-    col_w = 980
+    col_w = min(920, w - 2 * SAFE_X)
     col_x = (w - col_w) // 2
-    top = 70
+    top = 56
 
     draw.text((col_x, top), branding, font=font_xl, fill=hex_to_rgb(brand))
     draw.text(
-        (col_x, top + 70),
+        (col_x, top + 62),
         "Arrow keys · Enter to boot · Esc to exit",
         font=font_sm,
         fill=hex_to_rgb(brand),
@@ -551,10 +553,10 @@ def render_mockup(
         ("Snapshots", False),
         ("EFI fallback", False),
     ]
-    row_top = top + 160
-    row_h = 78
+    row_top = top + 130
+    row_h = 68
     for index, (label, selected) in enumerate(entries):
-        y0 = row_top + index * (row_h + 18)
+        y0 = row_top + index * (row_h + 14)
         y1 = y0 + row_h
         box = (col_x, y0, col_x + col_w, y1)
         if selected:
@@ -569,20 +571,19 @@ def render_mockup(
             )
             ink = muted
             marker = " "
-        draw.text((col_x + 28, y0 + 20), f"{marker}  {label}", font=font_lg, fill=hex_to_rgb(ink))
+        draw.text((col_x + 24, y0 + 16), f"{marker}  {label}", font=font_lg, fill=hex_to_rgb(ink))
 
-    # Centered 16-colour strip from the mapped Limine palettes
     cells = palette["limine"]["term_palette"].split(";") + palette["limine"][
         "term_palette_bright"
     ].split(";")
-    strip_y = h - 100
-    cell_w = 68
+    strip_y = h - 88
+    cell_w = 64
     total = cell_w * len(cells)
-    x0 = (w - total) // 2
+    x0 = max(SAFE_X, (w - total) // 2)
     for index, cell in enumerate(cells):
         cx = x0 + index * cell_w
         draw.rounded_rectangle(
-            (cx + 4, strip_y, cx + cell_w - 4, strip_y + 52),
+            (cx + 3, strip_y, cx + cell_w - 3, strip_y + 48),
             radius=6,
             fill=hex_to_rgb("#" + cell),
         )
@@ -601,6 +602,60 @@ def generate_preview(slug: str, branding: str | None = None) -> Path:
     return render_mockup(palette, preview_path(slug), branding=branding or "Omarchy Bootloader")
 
 
+def bust_image_picker_cache(preview_root: Path) -> None:
+    """Invalidate omarchy-menu-images rows/thumbnails for our preview dir."""
+    try:
+        os.utime(preview_root, None)
+    except OSError:
+        pass
+
+    cache_dir = Path(
+        os.environ.get(
+            "OMABOOT_IMAGE_SELECTOR_CACHE",
+            home() / ".cache/omarchy/image-selector",
+        )
+    )
+    if not cache_dir.is_dir():
+        return
+
+    needle = str(preview_root.resolve())
+    for path in cache_dir.iterdir():
+        name = path.name
+        if not (
+            name.endswith(".rows")
+            or name.endswith(".signature")
+            or name.endswith(".fast-signature")
+            or name.endswith(".rows.lock")
+        ):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if needle in text or str(preview_root) in text:
+            path.unlink(missing_ok=True)
+
+    index = cache_dir / "index.tsv"
+    if index.is_file():
+        try:
+            lines = index.read_text(encoding="utf-8", errors="ignore").splitlines()
+        except OSError:
+            lines = []
+        kept: list[str] = []
+        for line in lines:
+            parts = line.split("\t")
+            if parts and (needle in parts[0] or str(preview_root) in parts[0]):
+                if len(parts) >= 3:
+                    (cache_dir / f"{parts[2]}.jpg").unlink(missing_ok=True)
+                    (cache_dir / f"{parts[2]}.jpg.lock").unlink(missing_ok=True)
+                continue
+            kept.append(line)
+        try:
+            atomic_write(index, ("\n".join(kept) + ("\n" if kept else "")))
+        except OSError:
+            pass
+
+
 def generate_all_previews(branding: str | None = None) -> list[Path]:
     out: list[Path] = []
     preview_root = paths()["cache"] / "previews"
@@ -612,6 +667,7 @@ def generate_all_previews(branding: str | None = None) -> list[Path]:
     label = branding or "Omarchy Bootloader"
     for slug in sorted(wanted):
         out.append(generate_preview(slug, branding=label))
+    bust_image_picker_cache(preview_root)
     return out
 
 
