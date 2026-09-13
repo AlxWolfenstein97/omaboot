@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Thin launcher so menu actions can call omaboot-* by name.
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export OMABOOT_PLUGIN_DIR="${OMABOOT_PLUGIN_DIR:-$(cd "$here/.." && pwd)}"
+exec python3 "$OMABOOT_PLUGIN_DIR/lib/omaboot.py" "$@"
