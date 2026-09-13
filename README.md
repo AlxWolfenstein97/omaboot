@@ -15,6 +15,24 @@ labelled image picker, one mockup per installed theme, and an apply step that
 asks for sudo in a floating terminal. Boot is not user-land, so this is
 **not** tied to `omarchy theme set`.
 
+## Goals (and honest limits)
+
+These Style plugins extend Omarchy’s theme system **without requiring theme
+authors — or you — to ship anything extra**. Official themes, your forks, and
+third-party installs all work as long as they have a `colors.toml`.
+
+| Goal | What that means here |
+|------|----------------------|
+| Zero extra assets | No per-theme Limine art. Colours come from `colors.toml` alone. |
+| Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
+| Illustrative mockups | Centered Limine-ish chrome. **Not** a real boot framebuffer — Limine has no headless renderer. |
+| Carousel-safe | Mockups match the Style tile aspect (~768×475) so edge text is not cropped. |
+| Slow pickers are OK | Warming every theme PNG takes a moment; that is the cost of generating previews instead of bundling assets. |
+
+True WYSIWYG would need QEMU screenshots or extra art per theme — that narrows
+the scope we refuse to narrow. Plymouth Unlock looks “real” because Omarchy
+already ships unlock chrome; boot does not, so we draw from the palette.
+
 ## What you get
 
 - **Style → Boot Themes** in the Omarchy menu — same carousel picker as Unlock /
@@ -83,7 +101,6 @@ Uninstall removes the menu row and cache/state. It does **not** rewrite
 
 - Limine only reads the conf at boot — reboot to see the new palette on bare
   metal.
-- Mockups are illustrative, not a pixel-perfect Limine framebuffer.
 - There is no separate Plymouth-style **Default** tile: Omarchy’s stock Limine
   palette is Tokyo Night in practice, so pick **Tokyo Night** for install-day
   colours.
@@ -100,8 +117,9 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships).
-- Sibling plugin: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs) — same
-  Style-menu mockup pipeline for OBS Studio.
+- Sibling plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
+  [OmaVT](https://github.com/AlxWolfenstein97/omavt),
+  [OmaTTY](https://github.com/AlxWolfenstein97/omatty).
 - [Omarchy](https://omarchy.org/) — theme pipeline, Style menu image picker,
   and Limine defaults this plugin patches carefully.
 

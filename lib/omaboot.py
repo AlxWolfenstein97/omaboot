@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """OmaBoot — Style-menu Limine boot palettes from any Omarchy theme.
 
-Discovers every theme with a colors.toml, renders Limine-style mockups, and
-patches only a managed colour block in limine.conf (sudo). Boot entries and
-any custom cmdline stay untouched. Not hooked to theme-set — boot is not
-user-land and needs a password.
+Discovers every theme with a colors.toml (no extra theme assets required),
+renders centered Limine-style mockups for the Style carousel, and patches
+only a managed colour block in limine.conf (sudo). Boot entries and any
+custom cmdline stay untouched. Not hooked to theme-set — boot is not
+user-land and needs a password. Mockups are illustrative — Limine has no
+headless renderer, so these are not WYSIWYG boot screenshots.
 """
 
 from __future__ import annotations
@@ -500,13 +502,22 @@ def branding_label(existing_conf: str | None = None) -> str:
     return "Omarchy Bootloader"
 
 
+# Style carousel selected tile is 768×475 (~1.62). Match that aspect so
+# PreserveAspectCrop does not shave left/right the way 16:9 sources do.
+MOCKUP_SIZE = (1536, 950)
+
+
 def render_mockup(
     palette: dict[str, Any],
     dest: Path,
-    size: tuple[int, int] = (1920, 1080),
+    size: tuple[int, int] = MOCKUP_SIZE,
     branding: str = "Omarchy Bootloader",
 ) -> Path:
-    """Fake Limine interface: backdrop, branding, help, menu rows, palette strip."""
+    """Fake Limine interface: centered branding, menu rows, palette strip.
+
+    Theme name is the picker label — keep chrome in the middle safe zone so
+    the Style carousel does not crop important text.
+    """
     w, h = size
     bg = palette["background"]
     brand = palette["brand"]
@@ -518,50 +529,63 @@ def render_mockup(
     img = Image.new("RGB", size, hex_to_rgb(bg))
     draw = ImageDraw.Draw(img)
 
-    font_sm = try_font(26)
-    font_md = try_font(34)
-    font_lg = try_font(44)
-    font_xl = try_font(56)
+    font_sm = try_font(24)
+    font_lg = try_font(40)
+    font_xl = try_font(52)
 
-    # Top branding + help (mirrors Limine chrome)
-    draw.text((64, 48), branding, font=font_xl, fill=hex_to_rgb(brand))
-    help_bits = "Arrow keys to select  ·  Enter to boot  ·  Esc to exit"
-    draw.text((64, 120), help_bits, font=font_sm, fill=hex_to_rgb(brand))
+    # Centered column — mirrors Limine without hugging the image edges.
+    col_w = 980
+    col_x = (w - col_w) // 2
+    top = 70
 
-    # Theme name badge
-    draw.text((64, 180), f"palette · {palette['name']}", font=font_sm, fill=hex_to_rgb(muted))
+    draw.text((col_x, top), branding, font=font_xl, fill=hex_to_rgb(brand))
+    draw.text(
+        (col_x, top + 70),
+        "Arrow keys · Enter to boot · Esc to exit",
+        font=font_sm,
+        fill=hex_to_rgb(brand),
+    )
 
     entries = [
-        ("Omarchy", True, "linux · current"),
-        ("Snapshots", False, "limine-snapper-sync"),
-        ("EFI fallback", False, "BOOTX64.EFI"),
+        ("Omarchy", True),
+        ("Snapshots", False),
+        ("EFI fallback", False),
     ]
-    row_top = 260
-    row_h = 72
-    for index, (label, selected, comment) in enumerate(entries):
-        y0 = row_top + index * (row_h + 16)
+    row_top = top + 160
+    row_h = 78
+    for index, (label, selected) in enumerate(entries):
+        y0 = row_top + index * (row_h + 18)
         y1 = y0 + row_h
-        box = (64, y0, w - 64, y1)
+        box = (col_x, y0, col_x + col_w, y1)
         if selected:
-            draw.rounded_rectangle(box, radius=10, fill=hex_to_rgb(sel_bg), outline=hex_to_rgb(accent), width=3)
+            draw.rounded_rectangle(
+                box, radius=10, fill=hex_to_rgb(sel_bg), outline=hex_to_rgb(accent), width=3
+            )
             ink = fg
-            marker = "▶"
+            marker = ">"
         else:
-            draw.rounded_rectangle(box, radius=10, fill=hex_to_rgb(darken(bg, 0.08)), outline=hex_to_rgb(muted), width=1)
+            draw.rounded_rectangle(
+                box, radius=10, fill=hex_to_rgb(darken(bg, 0.08)), outline=hex_to_rgb(muted), width=1
+            )
             ink = muted
             marker = " "
-        draw.text((88, y0 + 18), f"{marker}  {label}", font=font_lg, fill=hex_to_rgb(ink))
-        draw.text((w - 420, y0 + 24), comment, font=font_sm, fill=hex_to_rgb(muted))
+        draw.text((col_x + 28, y0 + 20), f"{marker}  {label}", font=font_lg, fill=hex_to_rgb(ink))
 
-    # 16-colour strip from the mapped Limine palettes
-    strip_y = h - 160
-    draw.text((64, strip_y - 48), "term_palette", font=font_md, fill=hex_to_rgb(fg))
-    cells = palette["limine"]["term_palette"].split(";") + palette["limine"]["term_palette_bright"].split(";")
-    cell_w = (w - 128) // max(len(cells), 1)
+    # Centered 16-colour strip from the mapped Limine palettes
+    cells = palette["limine"]["term_palette"].split(";") + palette["limine"][
+        "term_palette_bright"
+    ].split(";")
+    strip_y = h - 100
+    cell_w = 68
+    total = cell_w * len(cells)
+    x0 = (w - total) // 2
     for index, cell in enumerate(cells):
-        x0 = 64 + index * cell_w
-        x1 = x0 + cell_w - 8
-        draw.rounded_rectangle((x0, strip_y, x1, strip_y + 72), radius=8, fill=hex_to_rgb("#" + cell))
+        cx = x0 + index * cell_w
+        draw.rounded_rectangle(
+            (cx + 4, strip_y, cx + cell_w - 4, strip_y + 52),
+            radius=6,
+            fill=hex_to_rgb("#" + cell),
+        )
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     img.save(dest, format="PNG", optimize=True)
