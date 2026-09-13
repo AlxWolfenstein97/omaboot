@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "io.github.alxwolfenstein97.omaboot",
   "name": "OmaBoot",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "AlxWolfenstein97",
   "license": "MIT",
-  "description": "Style menu picker with Limine boot mockups for every Omarchy theme, plus a stock Default tile. Patches only a managed colour block in limine.conf (sudo) and leaves boot entries alone.",
+  "description": "Style menu picker with Limine boot mockups for every Omarchy theme. Patches only a managed colour block in limine.conf (sudo) and leaves boot entries alone.",
   "homepage": "https://github.com/AlxWolfenstein97/omaboot",
   "repository": "https://github.com/AlxWolfenstein97/omaboot",
   "kinds": [

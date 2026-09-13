@@ -16,8 +16,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/themes/fixture" "$tmp/state" "$tmp/cache" \
   "$tmp/.config/omarchy/themes" "$tmp/.config/omarchy/extensions" \
-  "$tmp/.local/state/omarchy/current" \
-  "$tmp/default/limine"
+  "$tmp/.local/state/omarchy/current"
 
 cat >"$tmp/themes/fixture/colors.toml" <<'EOF'
 mode = "dark"
@@ -35,21 +34,6 @@ yellow = "#FFD400"
 blue = "#5B7CFF"
 magenta = "#FF3D9A"
 cyan = "#00E8FF"
-EOF
-
-# Stock Omarchy Limine default (Tokyo Night) — same family as default Plymouth.
-cat >"$tmp/default/limine/limine.conf" <<'EOF'
-interface_branding: Omarchy Bootloader
-interface_branding_color: 9ece6a
-interface_help_color: 9ece6a
-interface_help_color_bright: 9ece6a
-term_background: 1a1b26
-backdrop: 1a1b26
-term_palette: 15161e;f7768e;9ece6a;e0af68;7aa2f7;bb9af7;7dcfff;a9b1d6
-term_palette_bright: 414868;f7768e;9ece6a;e0af68;7aa2f7;bb9af7;7dcfff;c0caf5
-term_foreground: c0caf5
-term_foreground_bright: c0caf5
-term_background_bright: 24283b
 EOF
 
 # Fake limine.conf with custom cmdline (iommu-style extras) that must survive.
@@ -97,12 +81,6 @@ export OMABOOT_STATE_DIR="$tmp/state"
 export OMABOOT_CACHE_DIR="$tmp/cache"
 export OMABOOT_LIMINE_CONF="$tmp/limine.conf"
 
-if "$here/bin/omaboot" list | head -1 | grep -qx default; then
-  pass "list leads with default"
-else
-  bad "list leads with default"
-fi
-
 if "$here/bin/omaboot" list | grep -qx fixture; then
   pass "list discovers fixture"
 else
@@ -142,24 +120,6 @@ if "$here/bin/omaboot" preview fixture >/dev/null; then
   [[ -f $tmp/cache/previews/fixture.png ]] && pass "preview png" || bad "preview png"
 else
   bad "preview fixture"
-fi
-
-# Stock Default — reads packaged limine.conf, same family as default Plymouth unlock.
-if "$here/bin/omaboot" set default --quiet; then
-  pass "set default"
-else
-  bad "set default"
-fi
-grep -q 'theme: default' "$tmp/limine.conf" && pass "default theme tag" || bad "default theme tag"
-grep -q 'term_background: 1a1b26' "$tmp/limine.conf" && pass "default bg #1a1b26" || bad "default bg #1a1b26"
-grep -q 'interface_branding_color: 9ece6a' "$tmp/limine.conf" && pass "default brand green" || bad "default brand green"
-grep -q 'intel_iommu=on iommu=pt' "$tmp/limine.conf" && pass "cmdline after default" || bad "cmdline after default"
-[[ "$(cat "$tmp/state/current")" == "default" ]] && pass "state default" || bad "state default"
-
-if "$here/bin/omaboot" preview default >/dev/null; then
-  [[ -f $tmp/cache/previews/default.png ]] && pass "default preview png" || bad "default preview png"
-else
-  bad "preview default"
 fi
 
 # Append-once path: conf with no colour keys at all.
