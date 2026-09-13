@@ -22,6 +22,7 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omaboot"
+DEFAULT_SLUG = "default"
 BLOCK_START = "### omaboot:start"
 BLOCK_END = "### omaboot:end"
 MENU_START = "  // omaboot:start"
@@ -110,10 +111,13 @@ def slugify(name: str) -> str:
 
 
 def pretty_name(slug: str) -> str:
+    slug = slugify(slug)
+    if slug == DEFAULT_SLUG:
+        return "Default"
     return re.sub(
         r"(^|-)([a-z])",
         lambda m: (" " if m.group(1) == "-" else "") + m.group(2).upper(),
-        slugify(slug),
+        slug,
     )
 
 
@@ -190,10 +194,158 @@ def list_theme_slugs() -> list[str]:
         for entry in root.iterdir():
             if entry.name.startswith("."):
                 continue
+            if entry.name == DEFAULT_SLUG:
+                # Reserved for the stock Limine / Plymouth-matching scheme.
+                continue
             if entry.is_dir() or entry.is_symlink():
                 if (entry / "colors.toml").is_file():
                     found.add(entry.name)
     return sorted(found)
+
+
+def list_choice_slugs() -> list[str]:
+    """Picker order: stock Omarchy Limine default first, then every theme."""
+    return [DEFAULT_SLUG, *list_theme_slugs()]
+
+
+def stock_limine_conf_path() -> Path:
+    return omarchy_path() / "default" / "limine" / "limine.conf"
+
+
+def read_limine_colour_map(text: str) -> dict[str, str]:
+    """Pull aesthetic key → value from a limine.conf (American or British)."""
+    found: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, _, value = stripped.partition(":")
+        key = key.strip().lower()
+        value = value.strip()
+        if key not in MANAGED_KEYS or not value:
+            continue
+        # Prefer first occurrence; later entry-local keys are not expected here.
+        found.setdefault(key, value)
+    return found
+
+
+def normalize_limine_map(raw: dict[str, str]) -> dict[str, str]:
+    """Map either spelling onto the WRITE_KEYS American forms."""
+    aliases = {
+        "interface_branding_color": ("interface_branding_color", "interface_branding_colour"),
+        "interface_help_color": ("interface_help_color", "interface_help_colour"),
+        "interface_help_color_bright": (
+            "interface_help_color_bright",
+            "interface_help_colour_bright",
+        ),
+        "term_background": ("term_background",),
+        "backdrop": ("backdrop",),
+        "term_palette": ("term_palette",),
+        "term_palette_bright": ("term_palette_bright",),
+        "term_foreground": ("term_foreground",),
+        "term_foreground_bright": ("term_foreground_bright",),
+        "term_background_bright": ("term_background_bright",),
+    }
+
+    def clean_hex(value: str) -> str:
+        part = value.strip().lstrip("#")
+        if re.fullmatch(r"[0-9A-Fa-f]{6}", part):
+            return part.lower()
+        if re.fullmatch(r"[0-9A-Fa-f]{8}", part):
+            return part.lower()[2:]  # TTRRGGBB → RRGGBB
+        return bare_hex("#" + part[:6] if part else "000000")
+
+    def clean_palette(value: str) -> str:
+        parts = [clean_hex(part) for part in value.split(";") if part.strip()]
+        return ";".join(parts)
+
+    out: dict[str, str] = {}
+    for write_key, keys in aliases.items():
+        for key in keys:
+            if key not in raw or not raw[key]:
+                continue
+            if write_key in ("term_palette", "term_palette_bright"):
+                out[write_key] = clean_palette(raw[key])
+            else:
+                out[write_key] = clean_hex(raw[key])
+            break
+    return out
+
+
+def palette_from_limine_map(limine: dict[str, str], *, slug: str, name: str) -> dict[str, Any]:
+    """Build a mockup palette from Limine keys alone (no colors.toml)."""
+    bg = parse_hex(limine.get("term_background", ""), "#1a1b26")
+    brand = parse_hex(limine.get("interface_branding_color", ""), "#9ece6a")
+    fg = parse_hex(limine.get("term_foreground", ""), "#c0caf5")
+    bright_fg = parse_hex(limine.get("term_foreground_bright", ""), fg)
+    lighter = parse_hex(limine.get("term_background_bright", ""), lighten(bg, 0.12))
+
+    palette_cells = [c for c in limine.get("term_palette", "").split(";") if c]
+    bright_cells = [c for c in limine.get("term_palette_bright", "").split(";") if c]
+
+    def cell(index: int, fallback: str) -> str:
+        if 0 <= index < len(palette_cells):
+            return parse_hex(palette_cells[index], fallback)
+        return parse_hex(fallback, fallback)
+
+    muted = cell(0, lighten(bg, 0.2)) if bright_cells else cell(0, lighten(bg, 0.2))
+    if bright_cells:
+        muted = parse_hex(bright_cells[0], muted)
+
+    return {
+        "slug": slug,
+        "name": name,
+        "background": bg,
+        "dark_background": darken(bg, 0.15),
+        "darker_background": darken(bg, 0.3),
+        "lighter_background": lighter,
+        "foreground": fg,
+        "bright_foreground": bright_fg,
+        "muted": muted,
+        "accent": cell(4, brand),  # blue slot in ANSI order
+        "brand": brand,
+        "red": cell(1, "#f7768e"),
+        "green": cell(2, brand),
+        "yellow": cell(3, "#e0af68"),
+        "blue": cell(4, "#7aa2f7"),
+        "magenta": cell(5, "#bb9af7"),
+        "cyan": cell(6, "#7dcfff"),
+        "limine": {key: limine[key] for key in WRITE_KEYS},
+    }
+
+
+def palette_from_default() -> dict[str, Any]:
+    """Stock Omarchy Limine colours — same Tokyo Night family as default Plymouth.
+
+    Reads `$OMARCHY_PATH/default/limine/limine.conf` rather than sampling the
+    unlock PNG. Default Plymouth bg is already #1a1b26 (matches this file);
+    guessing shades from preview-unlock.png would only approximate the logo.
+    """
+    path = stock_limine_conf_path()
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"stock Limine conf not found: {path} (is Omarchy installed?)"
+        )
+    raw = read_limine_colour_map(path.read_text(encoding="utf-8"))
+    limine = normalize_limine_map(raw)
+    missing = [key for key in WRITE_KEYS if key not in limine]
+    if missing:
+        raise RuntimeError(f"stock limine.conf missing colour keys: {', '.join(missing)}")
+    return palette_from_limine_map(limine, slug=DEFAULT_SLUG, name="Default")
+
+
+def resolve_palette(slug: str) -> dict[str, Any]:
+    slug = slugify(slug)
+    if slug == DEFAULT_SLUG:
+        return palette_from_default()
+    return palette_from_theme(slug)
+
+
+def choice_exists(slug: str) -> bool:
+    slug = slugify(slug)
+    if slug == DEFAULT_SLUG:
+        return stock_limine_conf_path().is_file()
+    return theme_dir(slug) is not None
 
 
 def current_omarchy_slug() -> str | None:
@@ -573,7 +725,7 @@ def preview_path(slug: str) -> Path:
 
 
 def generate_preview(slug: str, branding: str | None = None) -> Path:
-    palette = palette_from_theme(slug)
+    palette = resolve_palette(slug)
     return render_mockup(palette, preview_path(slug), branding=branding or "Omarchy Bootloader")
 
 
@@ -581,23 +733,30 @@ def generate_all_previews(branding: str | None = None) -> list[Path]:
     out: list[Path] = []
     preview_root = paths()["cache"] / "previews"
     preview_root.mkdir(parents=True, exist_ok=True)
-    wanted = set(list_theme_slugs())
+    wanted = set(list_choice_slugs())
     for existing in preview_root.glob("*.png"):
         if existing.stem not in wanted:
             existing.unlink(missing_ok=True)
     label = branding or "Omarchy Bootloader"
-    for slug in sorted(wanted):
-        out.append(generate_preview(slug, branding=label))
+    for slug in list_choice_slugs():
+        if choice_exists(slug):
+            out.append(generate_preview(slug, branding=label))
     return out
 
 
 def set_theme(slug: str, *, quiet: bool = False, dry_run: bool = False) -> int:
     slug = slugify(slug)
-    if theme_dir(slug) is None:
+    if not choice_exists(slug):
         note(f"theme not found: {slug}")
         return 1
 
-    palette = palette_from_theme(slug)
+    palette = resolve_palette(slug)
+    # Ensure every WRITE_KEY is present (stock default always is; themes map all).
+    missing = [key for key in WRITE_KEYS if key not in palette["limine"]]
+    if missing:
+        note(f"palette missing limine keys: {', '.join(missing)}")
+        return 1
+
     existing = read_limine_conf()
     before_entries = [ln for ln in existing.splitlines() if ENTRY_LINE_RE.match(ln)]
     patched = patch_limine_conf(existing, palette)
@@ -654,7 +813,7 @@ def install_menu_entry() -> None:
                 "icon": "󰣆",
                 "label": "Boot Themes",
                 "aliases": ["boot", "limine", "bootloader"],
-                "description": "Preview Omarchy palettes on a Limine mockup and patch /boot/limine.conf colours (sudo)",
+                "description": "Preview Omarchy palettes on a Limine mockup (incl. stock Default) and patch /boot/limine.conf colours (sudo)",
                 "action": menu_action(),
             },
         )
@@ -680,8 +839,9 @@ def uninstall_menu_entry() -> None:
 
 
 def cmd_list(_: argparse.Namespace) -> int:
-    for slug in list_theme_slugs():
-        print(slug)
+    for slug in list_choice_slugs():
+        if choice_exists(slug):
+            print(slug)
     return 0
 
 
@@ -701,7 +861,7 @@ def cmd_preview(args: argparse.Namespace) -> int:
         branding = "Omarchy Bootloader"
 
     if args.theme:
-        if theme_dir(args.theme) is None:
+        if not choice_exists(args.theme):
             note(f"theme not found: {args.theme}")
             return 1
         path = generate_preview(args.theme, branding=branding)
@@ -718,10 +878,10 @@ def cmd_set(args: argparse.Namespace) -> int:
 
 def cmd_show(args: argparse.Namespace) -> int:
     slug = slugify(args.theme)
-    if theme_dir(slug) is None:
+    if not choice_exists(slug):
         note(f"theme not found: {slug}")
         return 1
-    palette = palette_from_theme(slug)
+    palette = resolve_palette(slug)
     sys.stdout.write(render_block(palette))
     return 0
 
@@ -734,7 +894,10 @@ def cmd_switcher(_: argparse.Namespace) -> int:
         pass
     generate_all_previews(branding=branding)
     preview_dir = paths()["cache"] / "previews"
-    current = current_omaboot_slug() or current_omarchy_slug()
+    current = current_omaboot_slug()
+    if not current or not (preview_dir / f"{current}.png").is_file():
+        # Prefer highlighting Default when nothing applied yet — same idea as Unlock.
+        current = DEFAULT_SLUG if (preview_dir / f"{DEFAULT_SLUG}.png").is_file() else current_omarchy_slug()
     selected = ""
     if current and (preview_dir / f"{current}.png").is_file():
         selected = str(preview_dir / f"{current}.png")
@@ -778,19 +941,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="omaboot", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("list", help="List Omarchy theme slugs with colors.toml").set_defaults(func=cmd_list)
+    sub.add_parser("list", help="List default + Omarchy theme slugs").set_defaults(func=cmd_list)
     sub.add_parser("current", help="Print the last applied omaboot theme slug").set_defaults(func=cmd_current)
 
     preview = sub.add_parser("preview", help="Render Limine mockup PNG(s)")
-    preview.add_argument("theme", nargs="?", help="Theme slug; omit for all")
+    preview.add_argument("theme", nargs="?", help="Theme slug or 'default'; omit for all")
     preview.set_defaults(func=cmd_preview)
 
     show = sub.add_parser("show", help="Print the managed limine colour block for a theme")
-    show.add_argument("theme", help="Theme slug")
+    show.add_argument("theme", help="Theme slug or 'default'")
     show.set_defaults(func=cmd_show)
 
     setter = sub.add_parser("set", help="Patch limine.conf with a theme palette (sudo)")
-    setter.add_argument("theme", help="Theme slug")
+    setter.add_argument("theme", help="Theme slug or 'default' (stock Omarchy Limine colours)")
     setter.add_argument("--quiet", action="store_true")
     setter.add_argument("--dry-run", action="store_true", help="Print patched conf to stdout")
     setter.set_defaults(func=cmd_set)

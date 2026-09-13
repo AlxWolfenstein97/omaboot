@@ -18,7 +18,8 @@ asks for sudo in a floating terminal. Boot is not user-land, so this is
 ## What you get
 
 - **Style → Boot Themes** in the Omarchy menu — same carousel picker as Unlock /
-  Theme / Background.
+  Theme / Background, including a **Default** tile (stock Omarchy Limine
+  colours — same Tokyo Night `#1a1b26` family as the default Plymouth unlock).
 - **Live theme discovery** — every Omarchy theme with a `colors.toml` under
   `~/.config/omarchy/themes` or `$OMARCHY_PATH/themes`.
 - **Mockups** — a simplified Limine frame (branding, help, menu rows, 16-colour
@@ -60,9 +61,10 @@ CLI:
 
 ```sh
 omaboot list
-omaboot preview              # warm all mockups
+omaboot preview              # warm all mockups (incl. default)
 omaboot switcher             # picker → prints slug
-omaboot show tokyo-night     # print managed block
+omaboot show default         # stock Omarchy Limine colour block
+omaboot set default          # restore stock Limine colours (sudo)
 omaboot set tokyo-night      # patch limine.conf (sudo)
 omaboot set tokyo-night --dry-run
 omaboot current
@@ -84,6 +86,10 @@ Uninstall removes the menu row and cache/state. It does **not** rewrite
 - Limine only reads the conf at boot — reboot to see the new palette on bare
   metal.
 - Mockups are illustrative, not a pixel-perfect Limine framebuffer.
+- **Default** is the packaged `$OMARCHY_PATH/default/limine/limine.conf` colour
+  keys (Tokyo Night), not a sampled approximate of `preview-unlock.png`. The
+  default Plymouth unlock uses the same `#1a1b26` background; the logo green in
+  that PNG is close to, but not identical to, Limine’s `#9ece6a` branding tint.
 - `omarchy refresh limine` replaces the whole conf from Omarchy defaults; run
   Boot Themes again afterwards if you still want a themed palette.
 
