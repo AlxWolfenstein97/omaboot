@@ -33,6 +33,14 @@ True WYSIWYG would need QEMU screenshots or extra art per theme — that narrows
 the scope we refuse to narrow. Plymouth Unlock looks “real” because Omarchy
 already ships unlock chrome; boot does not, so we draw from the palette.
 
+### Why a picker (and no theme-set hook)?
+
+Boot needs sudo and only shows up after reboot — not something to rewrite on
+every `omarchy theme set`. The Style carousel is still the point: preview how
+Limine would wear **every** installed theme’s palette without rebooting twenty
+times. Same “one surface, many themes, faster than manual” idea as OmaOBS /
+OmaCursor / OmaVT.
+
 ## What you get
 
 - **Style → Boot Themes** in the Omarchy menu — same carousel picker as Unlock /
