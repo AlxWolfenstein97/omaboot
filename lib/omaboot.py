@@ -475,11 +475,12 @@ def atomic_write(path: Path, content: str | bytes) -> None:
 
 def try_font(size: int) -> ImageFont.ImageFont:
     candidates = [
+        "/usr/share/fonts/liberation/LiberationMono-Regular.ttf",
+        "/usr/share/fonts/Adwaita/AdwaitaMono-Regular.ttf",
+        "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf",
         "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
-        "/usr/share/fonts/TTF/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-        "/usr/share/fonts/noto/NotoSans-Regular.ttf",
-        "/usr/share/fonts/TTF/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/noto/NotoSansMono-Regular.ttf",
     ]
     for path in candidates:
         if Path(path).is_file():
@@ -508,6 +509,32 @@ def branding_label(existing_conf: str | None = None) -> str:
 # PreserveAspectCrop on the tile does not shave the subject.
 MOCKUP_SIZE = (1536, 864)
 SAFE_X = 120
+SAFE_Y = 48
+
+
+def _text_size(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+
+def _draw_help_pair(
+    draw: ImageDraw.ImageDraw,
+    x: int,
+    y: int,
+    key: str,
+    label: str,
+    font: ImageFont.ImageFont,
+    key_rgb: tuple[int, int, int],
+    label_rgb: tuple[int, int, int],
+    gap: int = 10,
+) -> int:
+    """Draw KEY + label; return width consumed."""
+    draw.text((x, y), key, font=font, fill=key_rgb)
+    kw, _ = _text_size(draw, key, font)
+    lx = x + kw + gap
+    draw.text((lx, y), label, font=font, fill=label_rgb)
+    lw, _ = _text_size(draw, label, font)
+    return kw + gap + lw
 
 
 def render_mockup(
@@ -516,77 +543,117 @@ def render_mockup(
     size: tuple[int, int] = MOCKUP_SIZE,
     branding: str = "Omarchy Bootloader",
 ) -> Path:
-    """Fake Limine interface: centered branding, menu rows, palette strip.
+    """Limine-like boot chrome from palette (Manual / System Snapshots layout).
 
-    Theme name is the picker label — keep chrome inside the horizontal safe
-    zone that survives the Style carousel crop.
+    Flat terminal UI: corner help keys, centered branding, ASCII snapshot tree,
+    inverse selection. Not a framebuffer capture — Limine has no headless
+    renderer. All chrome stays inside SAFE_X / SAFE_Y for the Style carousel.
     """
     w, h = size
     bg = palette["background"]
     brand = palette["brand"]
     fg = palette["bright_foreground"]
-    muted = palette["muted"]
-    sel_bg = palette["lighter_background"]
-    accent = palette["accent"]
+    version_ink = palette.get("cyan", palette["accent"])
 
-    img = Image.new("RGB", size, hex_to_rgb(bg))
+    bg_rgb = hex_to_rgb(bg)
+    brand_rgb = hex_to_rgb(brand)
+    fg_rgb = hex_to_rgb(fg)
+    version_rgb = hex_to_rgb(version_ink)
+    # Limine reverse-video selection: bright fg block, dark ink.
+    sel_bg_rgb = fg_rgb
+    sel_fg_rgb = bg_rgb
+
+    img = Image.new("RGB", size, bg_rgb)
     draw = ImageDraw.Draw(img)
 
-    font_sm = try_font(22)
-    font_lg = try_font(36)
-    font_xl = try_font(48)
+    font_help = try_font(20)
+    font_brand = try_font(28)
+    font_menu = try_font(24)
+    font_ver = try_font(18)
 
-    col_w = min(920, w - 2 * SAFE_X)
-    col_x = (w - col_w) // 2
-    top = 56
+    left = SAFE_X
+    right = w - SAFE_X
+    top = SAFE_Y
 
-    draw.text((col_x, top), branding, font=font_xl, fill=hex_to_rgb(brand))
-    draw.text(
-        (col_x, top + 62),
-        "Arrow keys · Enter to boot · Esc to exit",
-        font=font_sm,
-        fill=hex_to_rgb(brand),
+    # --- Top help / branding row (same band as real Limine) ---
+    help_y = top + 4
+    left_w = _draw_help_pair(draw, left, help_y, "ARROWS", "Select", font_help, brand_rgb, fg_rgb)
+    _draw_help_pair(
+        draw,
+        left + left_w + 36,
+        help_y,
+        "ENTER",
+        "Expand",
+        font_help,
+        brand_rgb,
+        fg_rgb,
     )
 
-    entries = [
-        ("Omarchy", True),
-        ("Snapshots", False),
-        ("EFI fallback", False),
-    ]
-    row_top = top + 130
-    row_h = 68
-    for index, (label, selected) in enumerate(entries):
-        y0 = row_top + index * (row_h + 14)
-        y1 = y0 + row_h
-        box = (col_x, y0, col_x + col_w, y1)
-        if selected:
-            draw.rounded_rectangle(
-                box, radius=10, fill=hex_to_rgb(sel_bg), outline=hex_to_rgb(accent), width=3
-            )
-            ink = fg
-            marker = ">"
-        else:
-            draw.rounded_rectangle(
-                box, radius=10, fill=hex_to_rgb(darken(bg, 0.08)), outline=hex_to_rgb(muted), width=1
-            )
-            ink = muted
-            marker = " "
-        draw.text((col_x + 24, y0 + 16), f"{marker}  {label}", font=font_lg, fill=hex_to_rgb(ink))
+    brand_w, brand_h = _text_size(draw, branding, font_brand)
+    brand_x = (w - brand_w) // 2
+    # Keep branding clear of side help if the title is long.
+    brand_x = max(left + 280, min(brand_x, right - brand_w - 280))
+    draw.text((brand_x, help_y - 2), branding, font=font_brand, fill=brand_rgb)
 
-    cells = palette["limine"]["term_palette"].split(";") + palette["limine"][
-        "term_palette_bright"
-    ].split(";")
-    strip_y = h - 88
-    cell_w = 64
-    total = cell_w * len(cells)
-    x0 = max(SAFE_X, (w - total) // 2)
-    for index, cell in enumerate(cells):
-        cx = x0 + index * cell_w
-        draw.rounded_rectangle(
-            (cx + 3, strip_y, cx + cell_w - 3, strip_y + 48),
-            radius=6,
-            fill=hex_to_rgb("#" + cell),
-        )
+    right_pairs = [("S", "Firmware Setup"), ("B", "Blank Entry")]
+    cursor = right
+    for key, label in reversed(right_pairs):
+        kw, _ = _text_size(draw, key, font_help)
+        lw, _ = _text_size(draw, label, font_help)
+        pw = kw + 10 + lw
+        cursor -= pw
+        _draw_help_pair(draw, cursor, help_y, key, label, font_help, brand_rgb, fg_rgb)
+        cursor -= 36
+
+    # --- Centered snapshot tree (Manual screenshot composition) ---
+    lines: list[tuple[str, bool]] = [
+        ("[-] Omarchy", False),
+        (" ├── linux", False),
+        (" └─[-] Snapshots", False),
+        ("     [+] 2025-08-22 22:01:04", False),
+        ("     [+] 2025-08-22 21:45:00", True),
+        ("     [+] 2025-08-22 21:44:58", False),
+        ("     [+] 2025-08-22 21:44:56", False),
+        ("     [+] 2025-08-22 21:44:53", False),
+    ]
+    # Measure widest line for horizontal centering inside the safe zone.
+    line_widths = [_text_size(draw, text, font_menu)[0] for text, _ in lines]
+    tree_w = max(line_widths)
+    tree_w = min(tree_w, right - left)
+    tree_x = (w - tree_w) // 2
+
+    line_h = 34
+    tree_h = line_h * len(lines)
+    # Vertically center the tree under the help band; keep clear of version.
+    content_top = top + 56
+    content_bottom = h - SAFE_Y - 36
+    tree_y = content_top + max(0, (content_bottom - content_top - tree_h) // 2)
+
+    for index, (text, selected) in enumerate(lines):
+        y = tree_y + index * line_h
+        tw, th = _text_size(draw, text, font_menu)
+        if selected:
+            pad_x, pad_y = 8, 4
+            box = (
+                tree_x - pad_x,
+                y - pad_y,
+                tree_x + tw + pad_x,
+                y + th + pad_y,
+            )
+            draw.rectangle(box, fill=sel_bg_rgb)
+            draw.text((tree_x, y), text, font=font_menu, fill=sel_fg_rgb)
+        else:
+            draw.text((tree_x, y), text, font=font_menu, fill=fg_rgb)
+
+    # Boot tip arrow on the linux row (real Limine shows a marker).
+    linux_y = tree_y + line_h
+    tip = " →"
+    tip_x = tree_x + _text_size(draw, " ├── linux", font_menu)[0] + 4
+    if tip_x + _text_size(draw, tip, font_menu)[0] < right:
+        draw.text((tip_x, linux_y), tip, font=font_menu, fill=fg_rgb)
+
+    # Version stamp — bottom-left inside safe margins (carousel keeps it).
+    draw.text((left, h - SAFE_Y - 22), "v1.13", font=font_ver, fill=version_rgb)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     img.save(dest, format="PNG", optimize=True)
