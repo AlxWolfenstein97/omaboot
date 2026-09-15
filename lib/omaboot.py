@@ -505,11 +505,25 @@ def branding_label(existing_conf: str | None = None) -> str:
 
 # omarchy-menu-images thumbnails every source to 1536×864 (16:9) with
 # smartcrop BEFORE the Style carousel shows it in a 768×475 tile. Matching
-# that size avoids a second crop; keep content inside ~8% side margins so
-# PreserveAspectCrop on the tile does not shave the subject.
+# that size avoids a second crop. Current Limine chrome is dead-centered, so
+# side gutters are mostly empty — carousel crop barely touches the subject.
 MOCKUP_SIZE = (1536, 864)
-SAFE_X = 120
-SAFE_Y = 48
+
+
+def omarchy_pkg_version() -> str:
+    """Best-effort Omarchy package version for the footer stamp (e.g. 4.0.3-1)."""
+    try:
+        out = subprocess.check_output(
+            ["pacman", "-Q", "omarchy"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        parts = out.split()
+        if len(parts) >= 2:
+            return parts[1]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "4.0.3-1"
 
 
 def _text_size(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
@@ -526,7 +540,7 @@ def _draw_help_pair(
     font: ImageFont.ImageFont,
     key_rgb: tuple[int, int, int],
     label_rgb: tuple[int, int, int],
-    gap: int = 10,
+    gap: int = 8,
 ) -> int:
     """Draw KEY + label; return width consumed."""
     draw.text((x, y), key, font=font, fill=key_rgb)
@@ -537,23 +551,48 @@ def _draw_help_pair(
     return kw + gap + lw
 
 
+def _center_help_row(
+    draw: ImageDraw.ImageDraw,
+    y: int,
+    pairs: list[tuple[str, str]],
+    font: ImageFont.ImageFont,
+    key_rgb: tuple[int, int, int],
+    label_rgb: tuple[int, int, int],
+    canvas_w: int,
+    pair_gap: int = 28,
+) -> None:
+    widths = []
+    for key, label in pairs:
+        kw, _ = _text_size(draw, key, font)
+        lw, _ = _text_size(draw, label, font)
+        widths.append(kw + 8 + lw)
+    total = sum(widths) + pair_gap * (len(pairs) - 1)
+    x = (canvas_w - total) // 2
+    for index, (key, label) in enumerate(pairs):
+        used = _draw_help_pair(draw, x, y, key, label, font, key_rgb, label_rgb)
+        x += used + pair_gap
+
+
 def render_mockup(
     palette: dict[str, Any],
     dest: Path,
     size: tuple[int, int] = MOCKUP_SIZE,
     branding: str = "Omarchy Bootloader",
+    version: str | None = None,
 ) -> Path:
-    """Limine-like boot chrome from palette (Manual / System Snapshots layout).
+    """Limine-like boot chrome from palette (current Omarchy 4 / Limine 12 layout).
 
-    Flat terminal UI: corner help keys, centered branding, ASCII snapshot tree,
-    inverse selection. Not a framebuffer capture — Limine has no headless
-    renderer. All chrome stays inside SAFE_X / SAFE_Y for the Style carousel.
+    Dead-centered: branding, help under the title, snapshot tree with
+    ``N | timestamp`` rows, inverse selection, version footer. Not a framebuffer
+    capture — Limine has no headless renderer. Layout tracked from a QEMU
+    Tokyo Night capture of current Omarchy Limine (older Manual shot was 2.x/3.x).
     """
     w, h = size
     bg = palette["background"]
     brand = palette["brand"]
     fg = palette["bright_foreground"]
     version_ink = palette.get("cyan", palette["accent"])
+    ver = version or omarchy_pkg_version()
 
     bg_rgb = hex_to_rgb(bg)
     brand_rgb = hex_to_rgb(brand)
@@ -571,69 +610,58 @@ def render_mockup(
     font_menu = try_font(24)
     font_ver = try_font(18)
 
-    left = SAFE_X
-    right = w - SAFE_X
-    top = SAFE_Y
+    # --- Header cluster (centered): branding, then two help rows ---
+    brand_w, brand_h = _text_size(draw, branding, font_brand)
+    header_top = 64
+    draw.text(((w - brand_w) // 2, header_top), branding, font=font_brand, fill=brand_rgb)
 
-    # --- Top help / branding row (same band as real Limine) ---
-    help_y = top + 4
-    left_w = _draw_help_pair(draw, left, help_y, "ARROWS", "Select", font_help, brand_rgb, fg_rgb)
-    _draw_help_pair(
+    help1_y = header_top + brand_h + 18
+    _center_help_row(
         draw,
-        left + left_w + 36,
-        help_y,
-        "ENTER",
-        "Expand",
+        help1_y,
+        [("ARROWS", "Select"), ("ENTER", "Expand")],
         font_help,
         brand_rgb,
         fg_rgb,
+        w,
+    )
+    help2_y = help1_y + 28
+    _center_help_row(
+        draw,
+        help2_y,
+        [("S", "Firmware Setup"), ("B", "Blank Entry")],
+        font_help,
+        brand_rgb,
+        fg_rgb,
+        w,
     )
 
-    brand_w, brand_h = _text_size(draw, branding, font_brand)
-    brand_x = (w - brand_w) // 2
-    # Keep branding clear of side help if the title is long.
-    brand_x = max(left + 280, min(brand_x, right - brand_w - 280))
-    draw.text((brand_x, help_y - 2), branding, font=font_brand, fill=brand_rgb)
-
-    right_pairs = [("S", "Firmware Setup"), ("B", "Blank Entry")]
-    cursor = right
-    for key, label in reversed(right_pairs):
-        kw, _ = _text_size(draw, key, font_help)
-        lw, _ = _text_size(draw, label, font_help)
-        pw = kw + 10 + lw
-        cursor -= pw
-        _draw_help_pair(draw, cursor, help_y, key, label, font_help, brand_rgb, fg_rgb)
-        cursor -= 36
-
-    # --- Centered snapshot tree (Manual screenshot composition) ---
+    # --- Centered tree (current Limine + limine-snapper-sync naming) ---
     lines: list[tuple[str, bool]] = [
         ("[-] Omarchy", False),
-        (" ├── linux", False),
-        (" └─[-] Snapshots", False),
-        ("     [+] 2025-08-22 22:01:04", False),
-        ("     [+] 2025-08-22 21:45:00", True),
-        ("     [+] 2025-08-22 21:44:58", False),
-        ("     [+] 2025-08-22 21:44:56", False),
-        ("     [+] 2025-08-22 21:44:53", False),
+        ("  -> linux", False),
+        ("  [-] Snapshots", False),
+        ("    [+] 5 | 2026-09-15 03:27:20", False),
+        ("    [+] 4 | 2026-09-15 03:27:06", True),
+        ("    [+] 3 | 2026-09-15 03:26:43", False),
+        ("    [+] 2 | 2026-09-15 03:26:25", False),
+        ("    [+] 1 | 2026-09-15 03:23:26", False),
     ]
-    # Measure widest line for horizontal centering inside the safe zone.
     line_widths = [_text_size(draw, text, font_menu)[0] for text, _ in lines]
     tree_w = max(line_widths)
-    tree_w = min(tree_w, right - left)
     tree_x = (w - tree_w) // 2
 
-    line_h = 34
+    line_h = 32
     tree_h = line_h * len(lines)
-    # Vertically center the tree under the help band; keep clear of version.
-    content_top = top + 56
-    content_bottom = h - SAFE_Y - 36
+    content_top = help2_y + 48
+    content_bottom = h - 64
     tree_y = content_top + max(0, (content_bottom - content_top - tree_h) // 2)
 
     for index, (text, selected) in enumerate(lines):
         y = tree_y + index * line_h
         tw, th = _text_size(draw, text, font_menu)
         if selected:
-            pad_x, pad_y = 8, 4
+            pad_x, pad_y = 6, 3
             box = (
                 tree_x - pad_x,
                 y - pad_y,
@@ -645,15 +673,9 @@ def render_mockup(
         else:
             draw.text((tree_x, y), text, font=font_menu, fill=fg_rgb)
 
-    # Boot tip arrow on the linux row (real Limine shows a marker).
-    linux_y = tree_y + line_h
-    tip = " →"
-    tip_x = tree_x + _text_size(draw, " ├── linux", font_menu)[0] + 4
-    if tip_x + _text_size(draw, tip, font_menu)[0] < right:
-        draw.text((tip_x, linux_y), tip, font=font_menu, fill=fg_rgb)
-
-    # Version stamp — bottom-left inside safe margins (carousel keeps it).
-    draw.text((left, h - SAFE_Y - 22), "v1.13", font=font_ver, fill=version_rgb)
+    # Version stamp — bottom-center (Omarchy package version on current Limine).
+    ver_w, _ = _text_size(draw, ver, font_ver)
+    draw.text(((w - ver_w) // 2, h - 48), ver, font=font_ver, fill=version_rgb)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     img.save(dest, format="PNG", optimize=True)

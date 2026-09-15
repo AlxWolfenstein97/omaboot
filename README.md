@@ -28,8 +28,8 @@ making *another* theme is more worth it. Longer origin / stop-line:
 |------|----------------------|
 | Zero extra assets | No per-theme Limine art. Colours come from `colors.toml` alone. |
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
-| True Theme Vibe | Mockups track real Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colours look like on bare metal. Still **not** a framebuffer capture. |
-| Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size) with ~8% side / ~48px vertical safe margins so the 768×475 tile crop does not shave the subject. |
+| True Theme Vibe | Mockups track **current** Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colours look like on bare metal. Still **not** a framebuffer capture. |
+| Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size). Current Limine is dead-centered, so the 768×475 tile crop mostly shaves empty sides. |
 | Slow pickers are OK | Warming every theme PNG takes a moment; that is the cost of generating previews instead of bundling assets. |
 
 We are **not** putting WYSIWYG screenshots in themes. Themes stay palette-only;
@@ -52,8 +52,9 @@ OmaCursor / OmaVT.
   Theme / Background.
 - **Live theme discovery** — every Omarchy theme with a `colors.toml` under
   `~/.config/omarchy/themes` or `$OMARCHY_PATH/themes`.
-- **Mockups** — Limine-like chrome (corner help keys, centered branding,
-  snapshot tree, inverse selection) coloured from that theme’s palette.
+- **Mockups** — current Limine chrome (centered branding + help, snapshot tree
+  with `N | timestamp`, inverse selection, version footer) coloured from that
+  theme’s palette.
 - **Safe patch** — one `### omaboot:start` … `### omaboot:end` block in
   `/boot/limine.conf`. Appended once if missing; replaced as a whole when you
   change themes. Boot entries, timeout, branding *text*, and any custom cmdline
@@ -64,27 +65,36 @@ OmaCursor / OmaVT.
 
 Limine has no headless renderer, and we will not ask theme authors to ship boot
 screenshots. Instead the drawer in `lib/omaboot.py` paints a **single** Limine
-layout once, then recolours it from each theme’s `colors.toml`.
+layout once, then recolours it from each theme’s `colors.toml`. At this point
+the Tokyo Night mockup is close enough that asking for a framebuffer feels like
+a joke — still not pixel-identical UEFI output, but the *vibe* is there.
 
-**How that layout was locked in:** Omarchy’s stock Limine colours *are* Tokyo
-Night. The [System snapshots](https://omarchy.org/manual/system-snapshots/)
-page of the [Official Omarchy Manual](https://omarchy.org/manual/) shows a
-clean Limine boot screen in that palette (help keys, centered branding, snapshot
-tree, inverse selection, version stamp). That shot was the layout reference —
-not something we redistribute, and not something themes carry. Match the chrome
-to that Tokyo Night example, then every other installed theme inherits the same
-silhouette with *its* hex. One clear colour example → the rest fall into place.
+**How it was done**
 
-Stock Limine vibe (Tokyo Night mockup — compare to the Manual boot screenshot):
+1. Grab a clean **current** Omarchy Limine screen in QEMU (no capture card) on
+   stock Tokyo Night — five joke update checks so Snapshots had rows, second
+   entry highlighted like the Manual used to.
+2. Trace that chrome in Pillow: centered branding, help under the title,
+   `-> linux` / Snapshots tree, `[+] N | timestamp` rows, inverse selection,
+   package version footer. Dead-centered so the Style carousel crop barely
+   matters.
+3. Recolour the same silhouette from every installed theme’s `colors.toml`.
+   Themes stay palette-only; the plugin owns the art.
 
-![OmaBoot Tokyo Night mockup — stock Limine layout + palette](preview-tokyo-night.png)
+The [System snapshots](https://omarchy.org/manual/system-snapshots/) page of the
+[Official Omarchy Manual](https://omarchy.org/manual/) still shows a Tokyo Night
+boot screen, but that shot is **dated** (2.x / early 3.x corner-help layout). We
+matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
 
-Hero above is the same chrome on **Hackerman**, so the picker story is obvious:
-same Limine, different theme colours. Not every Style plugin will land this
-close; this is the start of that bar.
+**Compare — real QEMU capture vs generated mockup (same theme):**
 
-Carousel crop stays honest: content is centered inside safe margins so
-`omarchy-menu-images` does not shave the subject.
+| Real Limine (QEMU, Tokyo Night) | OmaBoot mockup (Tokyo Night) |
+| --- | --- |
+| ![Real Omarchy Limine on Tokyo Night — QEMU reference](reference-limine-tokyo-night.png) | ![OmaBoot Tokyo Night mockup — same layout, drawn from colors.toml](preview-tokyo-night.png) |
+
+Hero at the top is the same chrome on **Hackerman**, so the picker story is
+obvious: same Limine, different theme colours. Not every Style plugin will land
+this close; this is the start of that bar.
 
 ## Install
 
@@ -154,10 +164,12 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 
 ## Credits
 
-- **Layout reference:** Limine boot screenshot on
-  [System snapshots](https://omarchy.org/manual/system-snapshots/) in the
-  [Official Omarchy Manual](https://omarchy.org/manual/) (Tokyo Night / stock
-  Omarchy Limine). Used as a layout + vibe target only — not redistributed.
+- **Layout reference:** [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png)
+  — QEMU capture of current Omarchy Limine on stock Tokyo Night (centered chrome,
+  snapshot `N | timestamp` rows, `4.0.3-1` footer). Compare to
+  [`preview-tokyo-night.png`](preview-tokyo-night.png). The
+  [System snapshots](https://omarchy.org/manual/system-snapshots/) Manual shot
+  was the earlier (2.x / early 3.x) vibe target only.
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships). Compare mockup: stock **Tokyo Night**.
 - Sibling plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
