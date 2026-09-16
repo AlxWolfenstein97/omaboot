@@ -46,11 +46,27 @@ ensure_pkg() {
 # Pillow draws Style carousel mockups — install before warming previews.
 ensure_pkg python-pillow "draws Style → Boot Themes mockups (Pillow)"
 
-"$here/bin/omaboot" install-menu
-# Shell service re-runs install --quiet on every boot — skip menu/shell
-# rescans there (they stack across plugins and feel like a Hypr "zoom stroke").
+# Style extenders all rewrite the same extensions file. Shell-service --quiet
+# starts them in parallel — flock so we don't clobber each other's rows, then
+# refresh the live menu only when the file actually changed (avoids stacked
+# Hypr "zoom strokes" on every boot).
+menu_lock="$HOME/.local/state/omarchy/style-extenders/menu.lock"
+menu_sha="$HOME/.local/state/omarchy/style-extenders/menu.sha"
+menu_file="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
+mkdir -p "$(dirname "$menu_lock")"
+(
+  flock 9
+  "$here/bin/omaboot" install-menu
+  if command -v omarchy-shell >/dev/null 2>&1 && [[ -f $menu_file ]]; then
+    new_sha=$(sha256sum "$menu_file" 2>/dev/null | awk '{print $1}')
+    old_sha=$(cat "$menu_sha" 2>/dev/null || true)
+    if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
+      omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
+      printf '%s\n' "$new_sha" >"$menu_sha"
+    fi
+  fi
+) 9>"$menu_lock"
 if (( ! quiet )); then
-  omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
   omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 fi
 
