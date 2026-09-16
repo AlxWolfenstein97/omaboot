@@ -521,10 +521,46 @@ def branding_for_mockups() -> str:
 # that size avoids a second crop. Current Limine chrome is dead-centered, so
 # side gutters are mostly empty — carousel crop barely touches the subject.
 MOCKUP_SIZE = (1536, 864)
+# Bump when render_mockup chrome changes so cached tiles re-draw.
+MOCKUP_LAYOUT_VERSION = "2"
+
+
+def _input_token(path: Path | None) -> str:
+    if path is None:
+        return "none"
+    try:
+        st = path.stat()
+    except OSError:
+        return "missing"
+    return f"{st.st_mtime_ns}:{st.st_size}"
+
+
+def _preview_meta_path(dest: Path) -> Path:
+    return Path(str(dest) + ".meta")
+
+
+def _preview_fresh(dest: Path, fingerprint: str) -> bool:
+    if not dest.is_file():
+        return False
+    try:
+        return _preview_meta_path(dest).read_text(encoding="utf-8").strip() == fingerprint
+    except OSError:
+        return False
+
+
+def _write_preview_meta(dest: Path, fingerprint: str) -> None:
+    try:
+        _preview_meta_path(dest).write_text(fingerprint + "\n", encoding="utf-8")
+    except OSError:
+        pass
 
 
 def omarchy_pkg_version() -> str:
     """Best-effort Omarchy package version for the footer stamp (e.g. 4.0.3-1)."""
+    cached = getattr(omarchy_pkg_version, "_cached", None)
+    if cached is not None:
+        return cached
+    ver = "4.0.3-1"
     try:
         out = subprocess.check_output(
             ["pacman", "-Q", "omarchy"],
@@ -533,10 +569,22 @@ def omarchy_pkg_version() -> str:
         ).strip()
         parts = out.split()
         if len(parts) >= 2:
-            return parts[1]
+            ver = parts[1]
     except (OSError, subprocess.SubprocessError):
         pass
-    return "4.0.3-1"
+    omarchy_pkg_version._cached = ver  # type: ignore[attr-defined]
+    return ver
+
+
+def _preview_fingerprint(slug: str, branding: str, *, ver: str | None = None) -> str:
+    directory = theme_dir(slug)
+    colors = (directory / "colors.toml") if directory else None
+    return (
+        f"layout:{MOCKUP_LAYOUT_VERSION}"
+        f"|colors:{_input_token(colors)}"
+        f"|brand:{branding}"
+        f"|ver:{ver or omarchy_pkg_version()}"
+    )
 
 
 def _text_size(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
@@ -699,9 +747,16 @@ def preview_path(slug: str) -> Path:
     return paths()["cache"] / "previews" / f"{slugify(slug)}.png"
 
 
-def generate_preview(slug: str, branding: str | None = None) -> Path:
+def generate_preview(slug: str, branding: str | None = None, *, force: bool = False) -> Path:
+    dest = preview_path(slug)
+    label = branding or "Omarchy Bootloader"
+    fp = _preview_fingerprint(slug, label)
+    if not force and _preview_fresh(dest, fp):
+        return dest
     palette = palette_from_theme(slug)
-    return render_mockup(palette, preview_path(slug), branding=branding or "Omarchy Bootloader")
+    render_mockup(palette, dest, branding=label)
+    _write_preview_meta(dest, fp)
+    return dest
 
 
 def bust_image_picker_cache(preview_root: Path) -> None:
@@ -770,7 +825,7 @@ def _preview_pool(workers: int) -> ProcessPoolExecutor:
 
 def _warm_one_preview(job: tuple[str, str]) -> Path:
     slug, branding = job
-    return generate_preview(slug, branding=branding)
+    return generate_preview(slug, branding=branding, force=True)
 
 
 def generate_all_previews(branding: str | None = None) -> list[Path]:
@@ -778,17 +833,25 @@ def generate_all_previews(branding: str | None = None) -> list[Path]:
     preview_root = paths()["cache"] / "previews"
     preview_root.mkdir(parents=True, exist_ok=True)
     wanted = sorted(set(list_theme_slugs()))
+    wanted_set = set(wanted)
     for existing in preview_root.glob("*.png"):
-        if existing.stem not in set(wanted):
+        if existing.stem not in wanted_set:
             existing.unlink(missing_ok=True)
+            _preview_meta_path(existing).unlink(missing_ok=True)
     label = branding or "Omarchy Bootloader"
-    jobs = [(slug, label) for slug in wanted]
-    if not jobs:
-        bust_image_picker_cache(preview_root)
+    ver = omarchy_pkg_version()
+    dirty = [
+        (slug, label)
+        for slug in wanted
+        if not _preview_fresh(
+            preview_path(slug), _preview_fingerprint(slug, label, ver=ver)
+        )
+    ]
+    if not dirty:
         return out
-    workers = max(1, min(len(jobs), os.cpu_count() or 2))
+    workers = max(1, min(len(dirty), os.cpu_count() or 2))
     with _preview_pool(workers) as pool:
-        futures = {pool.submit(_warm_one_preview, job): job[0] for job in jobs}
+        futures = {pool.submit(_warm_one_preview, job): job[0] for job in dirty}
         for fut in as_completed(futures):
             slug = futures[fut]
             try:
