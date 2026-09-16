@@ -141,22 +141,18 @@ omaboot set tokyo-night --dry-run
 omaboot current
 ```
 
-## Remove
+## Disable vs remove
+
+| Action | What happens |
+|--------|----------------|
+| `omarchy plugin disable …` | Shell service stops. No theme-set hook here — last limine colour block stays until you uninstall or clear it. |
+| `./uninstall.sh` then disable / remove | Menu, cache/state, and the `### omaboot` colour block in `limine.conf` gone (sudo). Boot entries / cmdline untouched. Shared packages stay. |
+| `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/uninstall.sh
 omarchy plugin disable io.github.alxwolfenstein97.omaboot
 omarchy plugin remove io.github.alxwolfenstein97.omaboot
-```
-
-Uninstall is a clean slate: menu row, cache/state, and the `### omaboot`
-colour block in `limine.conf` (sudo). Boot entries and custom cmdline stay
-untouched.
-
-Shared packages stay installed. Optional wipe:
-
-```sh
-omarchy pkg drop python-pillow   # only if nothing else needs Pillow
 ```
 
 ## Limits, honestly
