@@ -90,13 +90,13 @@ matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
 
 | Real Limine (QEMU — grey letterbox cropped) | OmaBoot mockup |
 | --- | --- |
-| ![Real Omarchy Limine — QEMU reference with linux-omarchy, Snapshots, EFI fallback](reference-limine-asphalt.png) | ![OmaBoot mockup — same layout, Tokyo Night from colors.toml](preview-tokyo-night.png) |
+| ![Real Omarchy Limine — Tokyo Night QEMU reference with linux-omarchy, Snapshots, EFI fallback](reference-limine-tokyo-night.png) | ![OmaBoot mockup — same layout, Tokyo Night from colors.toml](preview-tokyo-night.png) |
 
 Hero at the top is the same chrome on **Hackerman**. The real shot above is the
-current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**); the mockup
-traces that silhouette and recolours from `colors.toml` as **Tokyo Night** (the
-palette the stock install still ships). Asphalt-legends redraw kept at
-[`preview-asphalt-legends.png`](preview-asphalt-legends.png).
+current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**) on
+**Tokyo Night**; the mockup traces that silhouette from `colors.toml`. An older
+2.x / early 3.x corner-help capture is kept as
+[`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png).
 
 ## Install
 
@@ -180,12 +180,12 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 
 ## Credits
 
-- **Layout reference:** [`reference-limine-asphalt.png`](reference-limine-asphalt.png)
-  — QEMU capture of current Omarchy Limine (`linux-omarchy`, Snapshots, EFI
-  fallback; grey letterbox cropped). Compare mockup (Tokyo Night):
-  [`preview-tokyo-night.png`](preview-tokyo-night.png). Older Tokyo Night capture
-  kept as [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png);
-  Asphalt redraw: [`preview-asphalt-legends.png`](preview-asphalt-legends.png).
+- **Layout reference:** [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png)
+  — QEMU capture of current Omarchy Limine on Tokyo Night (`linux-omarchy`,
+  Snapshots, EFI fallback; grey letterbox cropped). Compare mockup:
+  [`preview-tokyo-night.png`](preview-tokyo-night.png). Older 2.x / early 3.x
+  corner-help capture:
+  [`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png).
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships).
 - Sibling plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
