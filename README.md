@@ -88,13 +88,16 @@ matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
 
 **Compare — real QEMU capture vs generated mockup (same theme):**
 
-| Real Limine (QEMU, Asphalt Legends — grey letterbox cropped) | OmaBoot mockup (Asphalt Legends) |
+| Real Limine (QEMU, Tokyo Night) | OmaBoot mockup (Tokyo Night) |
 | --- | --- |
-| ![Real Omarchy Limine — QEMU reference](reference-limine-asphalt.png) | ![OmaBoot Asphalt Legends mockup — same layout, drawn from colors.toml](preview-asphalt-legends.png) |
+| ![Real Omarchy Limine on Tokyo Night — QEMU reference](reference-limine-tokyo-night.png) | ![OmaBoot Tokyo Night mockup — same layout, drawn from colors.toml](preview-tokyo-night.png) |
 
 Hero at the top is the same chrome on **Hackerman**, so the picker story is
-obvious: same Limine, different theme colours. Not every Style plugin will land
-this close; this is the start of that bar.
+obvious: same Limine, different theme colours. Layout chrome (linux-omarchy,
+EFI fallback, snapshot stamps) was re-traced from a later QEMU shot on Asphalt
+Legends ([`reference-limine-asphalt.png`](reference-limine-asphalt.png)) — grey
+letterbox cropped — then recoloured; the Tokyo Night pair above is the
+apples-to-apples palette check.
 
 ## Install
 
@@ -179,13 +182,12 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 ## Credits
 
 - **Layout reference:** [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png)
-  — QEMU capture of current Omarchy Limine on stock Tokyo Night (centered chrome,
-  snapshot `N | timestamp` rows, `4.0.3-1` footer). Compare to
-  [`preview-tokyo-night.png`](preview-tokyo-night.png). The
-  [System snapshots](https://omarchy.org/manual/system-snapshots/) Manual shot
-  was the earlier (2.x / early 3.x) vibe target only.
+  — QEMU capture on stock Tokyo Night (palette check). Current chrome
+  (`linux-omarchy`, Snapshots, EFI fallback) was re-traced from
+  [`reference-limine-asphalt.png`](reference-limine-asphalt.png). Compare mockup:
+  [`preview-tokyo-night.png`](preview-tokyo-night.png).
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
-  ships). Compare mockup: stock **Tokyo Night**.
+  ships). Apples-to-apples compare: stock **Tokyo Night**.
 - Sibling plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
   [OmaVT](https://github.com/AlxWolfenstein97/omavt),
   [OmaTTY](https://github.com/AlxWolfenstein97/omatty),
