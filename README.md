@@ -153,6 +153,12 @@ Uninstall is a clean slate: menu row, cache/state, and the `### omaboot`
 colour block in `limine.conf` (sudo). Boot entries and custom cmdline stay
 untouched.
 
+Shared packages stay installed. Optional wipe:
+
+```sh
+omarchy pkg drop python-pillow   # only if nothing else needs Pillow
+```
+
 ## Limits, honestly
 
 - Limine only reads the conf at boot — reboot to see the new palette on bare

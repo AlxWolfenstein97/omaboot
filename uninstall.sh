@@ -31,4 +31,5 @@ fi
 
 note "done — no omaboot menu or managed limine colour block left"
 note "plugin files remain at $here until you omit/remove the plugin"
+note "optional: omarchy pkg drop python-pillow  # if nothing else needs Pillow"
 exit 0
