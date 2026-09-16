@@ -30,7 +30,7 @@ making *another* theme is more worth it. Longer origin / stop-line:
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
 | True Theme Vibe | Mockups track **current** Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colours look like on bare metal. Still **not** a framebuffer capture. |
 | Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size). Current Limine is dead-centered, so the 768×475 tile crop mostly shaves empty sides. |
-| Snappy pickers | Mockups warm in parallel across CPU cores and **skip tiles whose `colors.toml` / branding / layout haven’t changed** — reopen is near-instant. |
+| Snappy pickers | Mockups warm in parallel across CPU cores and **skip tiles whose `colors.toml` / branding / layout haven’t changed** — reopen is near-instant. On par with Omarchy’s stock Style carousels; Cursors often feels even snappier. |
 
 We are **not** putting WYSIWYG screenshots in themes. Themes stay palette-only;
 OmaBoot draws the chrome itself. True pixel-identical boot art would need QEMU /
@@ -71,13 +71,13 @@ a joke — still not pixel-identical UEFI output, but the *vibe* is there.
 
 **How it was done**
 
-1. Grab a clean **current** Omarchy Limine screen in QEMU (no capture card) on
-   stock Tokyo Night — five joke update checks so Snapshots had rows, second
-   entry highlighted like the Manual used to.
+1. Grab a clean **current** Omarchy Limine screen in QEMU (crop the grey
+   letterbox), on a real palette — Snapshots populated after a moment,
+   `linux-omarchy` entry, **EFI fallback** sibling, selection on a snapshot row.
 2. Trace that chrome in Pillow: centered branding, help under the title,
-   `-> linux` / Snapshots tree, `[+] N | timestamp` rows, inverse selection,
-   package version footer. Dead-centered so the Style carousel crop barely
-   matters.
+   `-> linux-omarchy` / Snapshots tree, `[+] N | timestamp` rows, inverse
+   selection, `EFI fallback`, package version footer. Dead-centered so the
+   Style carousel crop barely matters.
 3. Recolour the same silhouette from every installed theme’s `colors.toml`.
    Themes stay palette-only; the plugin owns the art.
 
@@ -88,9 +88,9 @@ matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
 
 **Compare — real QEMU capture vs generated mockup (same theme):**
 
-| Real Limine (QEMU, Tokyo Night) | OmaBoot mockup (Tokyo Night) |
+| Real Limine (QEMU, Asphalt Legends — grey letterbox cropped) | OmaBoot mockup (Asphalt Legends) |
 | --- | --- |
-| ![Real Omarchy Limine on Tokyo Night — QEMU reference](reference-limine-tokyo-night.png) | ![OmaBoot Tokyo Night mockup — same layout, drawn from colors.toml](preview-tokyo-night.png) |
+| ![Real Omarchy Limine — QEMU reference](reference-limine-asphalt.png) | ![OmaBoot Asphalt Legends mockup — same layout, drawn from colors.toml](preview-asphalt-legends.png) |
 
 Hero at the top is the same chrome on **Hackerman**, so the picker story is
 obvious: same Limine, different theme colours. Not every Style plugin will land
