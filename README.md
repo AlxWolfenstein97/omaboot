@@ -86,16 +86,17 @@ The [System snapshots](https://omarchy.org/manual/system-snapshots/) page of the
 boot screen, but that shot is **dated** (2.x / early 3.x corner-help layout). We
 matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
 
-**Compare — real QEMU capture vs generated mockup (same theme, same chrome):**
+**Compare — real QEMU capture vs generated mockup (same chrome, Tokyo Night):**
 
 | Real Limine (QEMU — grey letterbox cropped) | OmaBoot mockup |
 | --- | --- |
-| ![Real Omarchy Limine — QEMU reference with linux-omarchy, Snapshots, EFI fallback](reference-limine-asphalt.png) | ![OmaBoot mockup — same layout, drawn from colors.toml](preview-asphalt-legends.png) |
+| ![Real Omarchy Limine — QEMU reference with linux-omarchy, Snapshots, EFI fallback](reference-limine-asphalt.png) | ![OmaBoot mockup — same layout, Tokyo Night from colors.toml](preview-tokyo-night.png) |
 
 Hero at the top is the same chrome on **Hackerman**. The real shot above is the
 current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**); the mockup
-traces that silhouette and recolours from `colors.toml`. A Tokyo Night-only
-palette check still lives at [`preview-tokyo-night.png`](preview-tokyo-night.png).
+traces that silhouette and recolours from `colors.toml` as **Tokyo Night** (the
+palette the stock install still ships). Asphalt-legends redraw kept at
+[`preview-asphalt-legends.png`](preview-asphalt-legends.png).
 
 ## Install
 
@@ -181,10 +182,10 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 
 - **Layout reference:** [`reference-limine-asphalt.png`](reference-limine-asphalt.png)
   — QEMU capture of current Omarchy Limine (`linux-omarchy`, Snapshots, EFI
-  fallback; grey letterbox cropped). Compare mockup:
-  [`preview-asphalt-legends.png`](preview-asphalt-legends.png). Older Tokyo Night
-  capture kept as [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png);
-  palette-only redraw: [`preview-tokyo-night.png`](preview-tokyo-night.png).
+  fallback; grey letterbox cropped). Compare mockup (Tokyo Night):
+  [`preview-tokyo-night.png`](preview-tokyo-night.png). Older Tokyo Night capture
+  kept as [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png);
+  Asphalt redraw: [`preview-asphalt-legends.png`](preview-asphalt-legends.png).
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships).
 - Sibling plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
