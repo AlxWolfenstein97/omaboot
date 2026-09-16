@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing as mp
 import os
 import re
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -503,6 +505,17 @@ def branding_label(existing_conf: str | None = None) -> str:
     return "Omarchy Bootloader"
 
 
+def branding_for_mockups() -> str:
+    """Picker warm branding without sudo — /boot is often root-only."""
+    path = limine_conf_path()
+    try:
+        if path.is_file() and os.access(path, os.R_OK):
+            return branding_label(path.read_text(encoding="utf-8"))
+    except OSError:
+        pass
+    return "Omarchy Bootloader"
+
+
 # omarchy-menu-images thumbnails every source to 1536×864 (16:9) with
 # smartcrop BEFORE the Style carousel shows it in a 768×475 tile. Matching
 # that size avoids a second crop. Current Limine chrome is dead-centered, so
@@ -745,17 +758,43 @@ def bust_image_picker_cache(preview_root: Path) -> None:
             pass
 
 
+def _preview_pool(workers: int) -> ProcessPoolExecutor:
+    # See omacursor: force fork so bin/* → python3 lib/*.py workers do not
+    # re-import __main__ under Python 3.14's forkserver default.
+    try:
+        ctx = mp.get_context("fork")
+    except ValueError:
+        ctx = mp.get_context()
+    return ProcessPoolExecutor(max_workers=workers, mp_context=ctx)
+
+
+def _warm_one_preview(job: tuple[str, str]) -> Path:
+    slug, branding = job
+    return generate_preview(slug, branding=branding)
+
+
 def generate_all_previews(branding: str | None = None) -> list[Path]:
     out: list[Path] = []
     preview_root = paths()["cache"] / "previews"
     preview_root.mkdir(parents=True, exist_ok=True)
-    wanted = set(list_theme_slugs())
+    wanted = sorted(set(list_theme_slugs()))
     for existing in preview_root.glob("*.png"):
-        if existing.stem not in wanted:
+        if existing.stem not in set(wanted):
             existing.unlink(missing_ok=True)
     label = branding or "Omarchy Bootloader"
-    for slug in sorted(wanted):
-        out.append(generate_preview(slug, branding=label))
+    jobs = [(slug, label) for slug in wanted]
+    if not jobs:
+        bust_image_picker_cache(preview_root)
+        return out
+    workers = max(1, min(len(jobs), os.cpu_count() or 2))
+    with _preview_pool(workers) as pool:
+        futures = {pool.submit(_warm_one_preview, job): job[0] for job in jobs}
+        for fut in as_completed(futures):
+            slug = futures[fut]
+            try:
+                out.append(fut.result())
+            except Exception as error:  # noqa: BLE001
+                note(f"preview {slug}: {error}")
     bust_image_picker_cache(preview_root)
     return out
 
@@ -863,11 +902,7 @@ def cmd_current(_: argparse.Namespace) -> int:
 
 
 def cmd_preview(args: argparse.Namespace) -> int:
-    branding = None
-    try:
-        branding = branding_label(read_limine_conf())
-    except Exception:
-        branding = "Omarchy Bootloader"
+    branding = branding_for_mockups()
 
     if args.theme:
         if theme_dir(args.theme) is None:
@@ -896,11 +931,7 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def cmd_switcher(_: argparse.Namespace) -> int:
-    branding = "Omarchy Bootloader"
-    try:
-        branding = branding_label(read_limine_conf())
-    except Exception:
-        pass
+    branding = branding_for_mockups()
     generate_all_previews(branding=branding)
     preview_dir = paths()["cache"] / "previews"
     current = current_omaboot_slug() or current_omarchy_slug()
