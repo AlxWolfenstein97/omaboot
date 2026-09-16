@@ -83,8 +83,9 @@ a joke — still not pixel-identical UEFI output, but the *vibe* is there.
 
 The [System snapshots](https://omarchy.org/manual/system-snapshots/) page of the
 [Official Omarchy Manual](https://omarchy.org/manual/) still shows a Tokyo Night
-boot screen, but that shot is **dated** (2.x / early 3.x corner-help layout). We
-matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
+boot screen from an older corner-help era — we don’t redistribute that shot.
+This release tracks live Limine 12 / current Omarchy 4 chrome from our own QEMU
+captures instead.
 
 **Compare — real QEMU capture vs generated mockup (same chrome, Tokyo Night):**
 
@@ -94,8 +95,9 @@ matched it first; this release tracks live Limine 12 / Omarchy 4 chrome instead.
 
 Hero at the top is the same chrome on **Hackerman**. The real shot above is the
 current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**) on
-**Tokyo Night**; the mockup traces that silhouette from `colors.toml`. An older
-2.x / early 3.x corner-help capture is kept as
+**Tokyo Night**; the mockup traces that silhouette from `colors.toml`. An earlier
+in-house capture from **Omarchy 4.0.3** (stock `linux` kernel entry, no EFI
+fallback row) is kept as
 [`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png).
 
 ## Install
@@ -183,8 +185,8 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 - **Layout reference:** [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png)
   — QEMU capture of current Omarchy Limine on Tokyo Night (`linux-omarchy`,
   Snapshots, EFI fallback; grey letterbox cropped). Compare mockup:
-  [`preview-tokyo-night.png`](preview-tokyo-night.png). Older 2.x / early 3.x
-  corner-help capture:
+  [`preview-tokyo-night.png`](preview-tokyo-night.png). Earlier **Omarchy 4.0.3**
+  capture (stock `linux` entry, no EFI fallback):
   [`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png).
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships).
