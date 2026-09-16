@@ -30,7 +30,7 @@ making *another* theme is more worth it. Longer origin / stop-line:
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
 | True Theme Vibe | Mockups track **current** Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colours look like on bare metal. Still **not** a framebuffer capture. |
 | Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size). Current Limine is dead-centered, so the 768×475 tile crop mostly shaves empty sides. |
-| Slow pickers are OK | Warming every theme PNG takes a moment; that is the cost of generating previews instead of bundling assets. |
+| Snappy pickers | Mockups warm in parallel across CPU cores — opens like Omarchy’s stock art carousels. |
 
 We are **not** putting WYSIWYG screenshots in themes. Themes stay palette-only;
 OmaBoot draws the chrome itself. True pixel-identical boot art would need QEMU /
@@ -110,8 +110,14 @@ Or from a checkout:
 omarchy plugin enable io.github.alxwolfenstein97.omaboot
 ```
 
-**Needs:** Limine (`/boot/limine.conf`), Omarchy’s image picker, Python 3 with
-Pillow (`python-pillow` on Arch), and sudo for apply.
+**Needs (installer pulls these if missing):**
+
+| Package | Why |
+|---------|-----|
+| `python-pillow` | Draws the Style → Boot Themes mockup PNGs. Without it the carousel is empty on first open. |
+
+Also needs Limine (`/boot/limine.conf`), Omarchy’s image picker, and sudo for
+apply. `install.sh` installs Pillow **before** warming mockups.
 
 ## How it works
 
