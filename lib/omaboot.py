@@ -834,6 +834,33 @@ def set_theme(slug: str, *, quiet: bool = False, dry_run: bool = False) -> int:
     return 0
 
 
+def clear_limine_colours(*, quiet: bool = False, dry_run: bool = False) -> int:
+    """Strip the omaboot managed colour block; leave boot entries / cmdline alone."""
+    existing = read_limine_conf()
+    has_block = BLOCK_START in existing
+    has_loose = any(_is_managed_assignment(ln) for ln in existing.splitlines())
+    if not has_block and not has_loose:
+        if not quiet:
+            note("no omaboot colour block in limine.conf")
+        return 0
+    cleaned = _strip_managed_outside_block(existing)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    if not cleaned.endswith("\n"):
+        cleaned += "\n"
+    if dry_run:
+        sys.stdout.write(cleaned)
+        return 0
+    write_limine_conf(cleaned)
+    state = paths()["state"]
+    for name in ("current", "last-block.conf"):
+        path = state / name
+        path.unlink(missing_ok=True)
+    if not quiet:
+        note(f"cleared omaboot colours from {limine_conf_path()}")
+        note("boot entries and cmdline left untouched")
+    return 0
+
+
 def remove_marked(content: str, start: str, end: str) -> str:
     pattern = re.compile(re.escape(start) + r".*?" + re.escape(end) + r"\n?", re.S)
     return pattern.sub("", content)
@@ -920,6 +947,10 @@ def cmd_set(args: argparse.Namespace) -> int:
     return set_theme(args.theme, quiet=args.quiet, dry_run=args.dry_run)
 
 
+def cmd_clear(args: argparse.Namespace) -> int:
+    return clear_limine_colours(quiet=args.quiet, dry_run=args.dry_run)
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     slug = slugify(args.theme)
     if theme_dir(slug) is None:
@@ -994,6 +1025,11 @@ def build_parser() -> argparse.ArgumentParser:
     setter.add_argument("--quiet", action="store_true")
     setter.add_argument("--dry-run", action="store_true", help="Print patched conf to stdout")
     setter.set_defaults(func=cmd_set)
+
+    clear = sub.add_parser("clear", help="Remove omaboot colour block from limine.conf (sudo)")
+    clear.add_argument("--quiet", action="store_true")
+    clear.add_argument("--dry-run", action="store_true")
+    clear.set_defaults(func=cmd_clear)
 
     sub.add_parser("switcher", help="Open image picker; print chosen slug").set_defaults(func=cmd_switcher)
     sub.add_parser("install-menu", help="Add Style → Boot Themes").set_defaults(func=cmd_install_menu)

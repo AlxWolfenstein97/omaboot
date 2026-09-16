@@ -149,8 +149,9 @@ omarchy plugin disable io.github.alxwolfenstein97.omaboot
 omarchy plugin remove io.github.alxwolfenstein97.omaboot
 ```
 
-Uninstall removes the menu row and cache/state. It does **not** rewrite
-`limine.conf` — your last applied palette stays until you change it.
+Uninstall is a clean slate: menu row, cache/state, and the `### omaboot`
+colour block in `limine.conf` (sudo). Boot entries and custom cmdline stay
+untouched.
 
 ## Limits, honestly
 
