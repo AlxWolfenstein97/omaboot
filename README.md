@@ -150,7 +150,10 @@ omaboot current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. No theme-set hook here — last limine colour block stays until you uninstall or clear it. |
-| `./uninstall.sh` then disable / remove | Menu, cache/state, and the `### omaboot` colour block in `limine.conf` gone (sudo). Boot entries / cmdline untouched. Shared packages stay. |
+| `./uninstall.sh` then disable / remove | Menu, cache/state, and the `### omaboot` colour block in `limine.conf` gone (**sudo required**, same class as Style → Unlock themes staying until changed). If sudo fails non-interactively, opens one floating terminal best-effort. Shared packages stay. Leaves a state tombstone so Service `--quiet` cannot resurrect the menu. |
+
+Quiet Service install no longer re-pulls Pillow or opens floating sudo (deps are
+interactive-only), and skips shell menu refresh/rescan to avoid boot “strokes”.
 | `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
 
 **Full wipe** — copy-paste to remove plugin wiring *and* the shared package this
