@@ -194,6 +194,7 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
   [OmaVT](https://github.com/AlxWolfenstein97/omavt),
   [OmaTTY](https://github.com/AlxWolfenstein97/omatty),
   [OmaCursor](https://github.com/AlxWolfenstein97/omacursor),
+  [OmaHud](https://github.com/AlxWolfenstein97/omahud),
   [Chroma](https://github.com/AlxWolfenstein97/chroma).
 - [Omarchy](https://omarchy.org/) — theme pipeline, Style menu image picker,
   and Limine defaults this plugin patches carefully.
