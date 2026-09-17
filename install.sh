@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# OmaBoot installer. Safe to re-run: rewrites what it owns, leaves limine
-# boot entries alone. Does NOT install a theme-set hook — applying needs sudo.
+# OmaBoot installer. Safe to re-run: menu written once (quiet skips rewrite when
+# // omaboot:start markers already exist). Leaves limine boot entries alone.
+# Does NOT install a theme-set hook — applying needs sudo.
 #
 # Flags:
 #   --quiet   less chatter (used by the shell service on startup)
@@ -87,40 +88,42 @@ pull_pkgs() {
 # (pkgs-prompted), never again on later boots if dismissed.
 pull_pkgs python-pillow || true
 
-# Style extenders all rewrite the same extensions file. Shell-service --quiet
-# starts them in parallel — flock so we don't clobber each other's rows.
-# Quiet path debounces menu refresh (one within 3s across parallel Services);
-# interactive also rescans plugins so mid-session enable shows the new row.
+# Style extenders share omarchy-menu.jsonc — flock so parallel Services don't
+# clobber each other. Interactive: always install-menu. Quiet: only if our
+# markers are absent (no rewrite/normalize every boot). Refresh only when written.
 menu_lock="$HOME/.local/state/omarchy/style-extenders/menu.lock"
 menu_sha="$HOME/.local/state/omarchy/style-extenders/menu.sha"
 menu_file="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
 mkdir -p "$(dirname "$menu_lock")"
 (
   flock 9
-  "$here/bin/omaboot" install-menu
-  if [[ -f $menu_file ]]; then
-    new_sha=$(sha256sum "$menu_file" 2>/dev/null | awk '{print $1}')
-    old_sha=$(cat "$menu_sha" 2>/dev/null || true)
-    if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
-      printf '%s\n' "$new_sha" >"$menu_sha"
-      if command -v omarchy-shell >/dev/null 2>&1; then
-        # Debounce: parallel quiet Services all rewrite the menu; one refresh
-        # within 3s is enough (avoids stacked Hypr strokes). Interactive always
-        # refreshes + rescan so mid-session enable shows the new row.
-        stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
-        do_refresh=1
-        if (( quiet )) && [[ -f $stamp ]]; then
-          now=$(date +%s)
-          then=$(stat -c %Y "$stamp" 2>/dev/null || echo 0)
-          if (( now - then < 3 )); then
-            do_refresh=0
+  write_menu=1
+  if (( quiet )) && [[ -f $menu_file ]] && grep -qF '// omaboot:start' "$menu_file"; then
+    write_menu=0
+  fi
+  if (( write_menu )); then
+    "$here/bin/omaboot" install-menu
+    if [[ -f $menu_file ]]; then
+      new_sha=$(sha256sum "$menu_file" 2>/dev/null | awk '{print $1}')
+      old_sha=$(cat "$menu_sha" 2>/dev/null || true)
+      if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
+        printf '%s\n' "$new_sha" >"$menu_sha"
+        if command -v omarchy-shell >/dev/null 2>&1; then
+          stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
+          do_refresh=1
+          if (( quiet )) && [[ -f $stamp ]]; then
+            now=$(date +%s)
+            then=$(stat -c %Y "$stamp" 2>/dev/null || echo 0)
+            if (( now - then < 3 )); then
+              do_refresh=0
+            fi
           fi
-        fi
-        if (( do_refresh )); then
-          touch "$stamp"
-          omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
-          if (( ! quiet )); then
-            omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+          if (( do_refresh )); then
+            touch "$stamp"
+            omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
+            if (( ! quiet )); then
+              omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+            fi
           fi
         fi
       fi
