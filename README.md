@@ -149,27 +149,23 @@ omaboot current
 
 | Action | What happens |
 |--------|----------------|
-| `omarchy plugin disable …` | Shell service stops. No theme-set hook here — last limine colour block stays until you uninstall or clear it. |
-| `./uninstall.sh` then disable / remove | Menu, cache/state gone; best-effort clear of the `### omaboot` colour block if sudo already works (`sudo -n` / cached). **No floating-terminal sudo** — Omarchy’s `plugin remove` never runs this script anyway (it only deletes the plugin dir). Prepare before removal: `omaboot clear` or Boot Themes → Tokyo Night. Shared packages stay. Tombstone + refresh + `rescanPlugins`. |
+| `omarchy plugin disable …` | Shell service stops. No theme-set hook — last limine colour block stays. |
+| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Then a **floating terminal** runs `omaboot clear` (sudo) to strip our Limine paint — we clean up our extras. Same floater offers y/N `pkg drop`. |
+| `omarchy pkg drop python-pillow` | Optional. Only if nothing else needs Pillow. Offered in the uninstall floater. |
 
-Quiet Service install: one-shot package prompt, menu written only if `// omaboot:start`
-markers are missing (no rewrite every boot).
-| `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
+Quiet Service install: one-shot package prompt; menu written only if `// omaboot:start`
+markers are missing; also scrubs orphan Style rows for sibling plugins whose
+dirs were deleted without `uninstall.sh`.
 
-**Prepare before removal** (recommended): Omarchy `plugin remove` does not run
-`uninstall.sh` — it only deletes the plugin folder, so Limine paint can linger.
-While the plugin is still installed, run `omaboot clear` (or pick Tokyo Night
-in Boot Themes), then uninstall / remove.
+Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
+`./uninstall.sh` first so the floater can clear Limine paint.
 
-**Full wipe** — copy-paste to remove plugin wiring *and* the shared package this
-installer may have pulled (skip the `pkg drop` line if something else still
-needs Pillow):
+**Full wipe:**
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/uninstall.sh
-omarchy plugin disable io.github.alxwolfenstein97.omaboot
+# floater: omaboot clear + optional pkg drop
 omarchy plugin remove io.github.alxwolfenstein97.omaboot
-omarchy pkg drop python-pillow
 ```
 
 ## Fresh VM smoke test
@@ -177,9 +173,8 @@ omarchy pkg drop python-pillow
 ```sh
 omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
 # Style → Boot Themes → pick a loud theme (Hackerman); reboot → Limine matches
-# Before remove: omaboot clear   # sudo here, while the plugin still exists
-# Then: ./uninstall.sh  and/or  omarchy plugin remove …
-# Confirm limine.conf has no ### omaboot markers
+# ./uninstall.sh  → Style row gone; floater clears ### omaboot (sudo)
+# Confirm limine.conf has no ### omaboot markers after floater finishes
 ```
 
 ## Limits, honestly

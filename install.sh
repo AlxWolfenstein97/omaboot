@@ -97,6 +97,38 @@ menu_file="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
 mkdir -p "$(dirname "$menu_lock")"
 (
   flock 9
+  # Scrub Style rows for siblings removed via plugin remove (no uninstall.sh).
+  scrubbed=0
+  scrub_out=$(python3 - <<'ORPHANSCRUB' || true
+from pathlib import Path
+import re
+menu = Path.home() / ".config/omarchy/extensions/omarchy-menu.jsonc"
+if not menu.is_file():
+    raise SystemExit(0)
+plugins = Path.home() / ".config/omarchy/plugins"
+pairs = [
+    ("omacursor", "io.github.alxwolfenstein97.omacursor"),
+    ("omaobs", "io.github.alxwolfenstein97.omaobs"),
+    ("omaboot", "io.github.alxwolfenstein97.omaboot"),
+    ("omavt", "io.github.alxwolfenstein97.omavt"),
+    ("omatty", "io.github.alxwolfenstein97.omatty"),
+    ("omahud", "io.github.alxwolfenstein97.omahud"),
+]
+text = menu.read_text(encoding="utf-8")
+orig = text
+for marker, pid in pairs:
+    if (plugins / pid).is_dir():
+        continue
+    start, end = f"// {marker}:start", f"// {marker}:end"
+    if start not in text:
+        continue
+    text = re.sub(re.escape(start) + r".*?" + re.escape(end) + r"\n?", "", text, flags=re.S)
+if text != orig:
+    menu.write_text(text, encoding="utf-8")
+    print("scrubbed-orphan-style-menus")
+ORPHANSCRUB
+  )
+  [[ $scrub_out == *scrubbed-orphan-style-menus* ]] && scrubbed=1
   write_menu=1
   if (( quiet )) && [[ -f $menu_file ]] && grep -qF '// omaboot:start' "$menu_file"; then
     write_menu=0
@@ -127,6 +159,20 @@ mkdir -p "$(dirname "$menu_lock")"
           fi
         fi
       fi
+    fi
+  fi
+  if (( scrubbed && ! write_menu )); then
+    if [[ -f $menu_file ]]; then
+      new_sha=$(sha256sum "$menu_file" 2>/dev/null | awk '{print $1}')
+      old_sha=$(cat "$menu_sha" 2>/dev/null || true)
+      if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
+        printf '%s\n' "$new_sha" >"$menu_sha"
+      fi
+    fi
+    if command -v omarchy-shell >/dev/null 2>&1; then
+      stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
+      touch "$stamp"
+      omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
     fi
   fi
 ) 9>"$menu_lock"
