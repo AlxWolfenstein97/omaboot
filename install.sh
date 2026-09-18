@@ -38,9 +38,9 @@ chmod 755 "$here"/bin/* "$here/check.sh" \
 
 export OMABOOT_PLUGIN_DIR="$here"
 
-# Packages need sudo. Interactive install asks in this TTY; Service --quiet
-# opens one floating terminal once (pkgs-prompted) — not again every boot.
-# Floater prints a header of what will be installed before the password prompt.
+# Packages need sudo. Interactive: header in this TTY. Service --quiet:
+# one headed floating terminal once (pkgs-prompted). Headers name this plugin,
+# what it does, and why each package is missing.
 pull_pkgs() {
   local -a missing=()
   local pkg
@@ -53,21 +53,20 @@ pull_pkgs() {
   fi
 
   if ! command -v omarchy >/dev/null 2>&1; then
-    warn "install manually: pacman -S ${missing[*]}"
+    warn "OmaBoot needs ${missing[*]} for: Style → Boot Themes — Limine colour mockups + apply — install manually: pacman -S ${missing[*]}"
     return 1
   fi
 
-  note "installing ${missing[*]}"
+  note "OmaBoot needs ${missing[*]} — Style → Boot Themes — Limine colour mockups + apply"
   if (( ! quiet )) && [[ -t 0 || -t 1 ]]; then
-    printf '%s\n' "OmaBoot — packages"
+    printf '%s\n' "OmaBoot"
+    printf '%s\n' "io.github.alxwolfenstein97.omaboot"
+    printf '%s\n' "Style → Boot Themes — Limine colour mockups + apply"
     printf '%s\n' "────────────────────────────────"
-    printf '%s\n' "Will install (sudo / pacman):"
+    printf '%s\n' "Needs to install (sudo / pacman):"
     for pkg in "${missing[@]}"; do
       case $pkg in
-        python-pillow) printf '  • %s — %s\n' "$pkg" "Style carousel mockups" ;;
-        python-numpy) printf '  • %s — %s\n' "$pkg" "fast Adwaita cursor remaps" ;;
-        terminus-font) printf '  • %s — %s\n' "$pkg" "Terminus console faces for TTY Fonts" ;;
-        adw-gtk-theme) printf '  • %s — %s\n' "$pkg" "GTK theme Chroma paints" ;;
+        python-pillow) printf '  • %s — %s\n' "$pkg" 'draw Boot Themes carousel mockups' ;;
         *) printf '  • %s\n' "$pkg" ;;
       esac
     done
@@ -77,12 +76,12 @@ pull_pkgs() {
       rm -f "$state/pkgs-prompted"
       return 0
     fi
-    warn "could not install: ${missing[*]}"
+    warn "OmaBoot could not install: ${missing[*]}"
     return 1
   fi
 
   if [[ -f $state/pkgs-prompted ]]; then
-    warn "still missing ${missing[*]} — run: omarchy pkg add ${missing[*]}"
+    warn "OmaBoot still missing ${missing[*]} (Style → Boot Themes — Limine colour mockups + apply) — run: omarchy pkg add ${missing[*]}"
     return 1
   fi
   mkdir -p "$state"
@@ -90,20 +89,19 @@ pull_pkgs() {
   local script="$state/install-floater.sh"
   {
     printf '%s\n' '#!/usr/bin/env bash' 'set -uo pipefail'
-    printf '%s\n' "printf '%s\n' 'OmaBoot — packages'"
-    printf '%s\n' "printf '%s\n' '────────────────────────────────'"
-    printf '%s\n' "printf '%s\n' 'Will install (sudo / pacman):'"
+    printf '%s\n' "printf '%s\\n' 'OmaBoot'"
+    printf '%s\n' "printf '%s\\n' 'io.github.alxwolfenstein97.omaboot'"
+    printf '%s\n' "printf '%s\\n' 'Style → Boot Themes — Limine colour mockups + apply'"
+    printf '%s\n' "printf '%s\\n' '────────────────────────────────'"
+    printf '%s\n' "printf '%s\\n' 'Needs to install (sudo / pacman):'"
     for pkg in "${missing[@]}"; do
       case $pkg in
-        python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'Style carousel mockups'" ;;
-        python-numpy) printf '%s\n' "printf '  • %s — %s\n' 'python-numpy' 'fast Adwaita cursor remaps'" ;;
-        terminus-font) printf '%s\n' "printf '  • %s — %s\n' 'terminus-font' 'Terminus console faces for TTY Fonts'" ;;
-        adw-gtk-theme) printf '%s\n' "printf '  • %s — %s\n' 'adw-gtk-theme' 'GTK theme Chroma paints'" ;;
+        python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'draw Boot Themes carousel mockups'" ;;
         *) printf '%s\n' "printf '  • %s\n' $(printf %q "$pkg")" ;;
       esac
     done
-    printf '%s\n' "printf '%s\n' '────────────────────────────────'"
-    printf '%s\n' "printf '%s\n' ''"
+    printf '%s\n' "printf '%s\\n' '────────────────────────────────'"
+    printf '%s\n' "printf '%s\\n' ''"
     printf '%s\n' "omarchy pkg add ${missing[*]}"
     if [[ -n ${PULL_PKGS_AFTER:-} ]]; then
       printf '%s\n' "$PULL_PKGS_AFTER"
@@ -111,13 +109,14 @@ pull_pkgs() {
   } >"$script"
   chmod 755 "$script"
   if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
-    warn "sudo needed for ${missing[*]} — opening a floating terminal"
+    warn "OmaBoot missing ${missing[*]} (Style → Boot Themes — Limine colour mockups + apply) — opening floating terminal"
     omarchy-launch-floating-terminal-with-presentation "bash $(printf %q "$script")" >/dev/null 2>&1 &
   else
-    warn "run: omarchy pkg add ${missing[*]}"
+    warn "OmaBoot: run omarchy pkg add ${missing[*]}"
   fi
   return 1
 }
+
 
 
 # Pillow draws Style carousel mockups — install before warming previews.

@@ -26,6 +26,8 @@ launch_cleanup_floater() {
   {
     printf '%s\n' '#!/usr/bin/env bash' 'set -uo pipefail'
     printf '%s\n' "printf '%s\n' 'OmaBoot — uninstall'"
+    printf '%s\n' "printf '%s\n' 'io.github.alxwolfenstein97.omaboot'"
+    printf '%s\n' "printf '%s\n' 'Style → Boot Themes — Limine colour mockups + apply'"
     printf '%s\n' "printf '%s\n' '────────────────────────────────'"
     printf '%s\n' "printf '%s\n' 'Will remove / reset (sudo):'"
     printf '%s\n' "printf '%s\n' '  • ### omaboot colour block in /boot/limine.conf'"
@@ -38,13 +40,14 @@ launch_cleanup_floater() {
     printf '%s\n' 'fi'
     if ((${#have[@]})); then
       printf '%s\n' ''
-      printf '%s\n' "printf '%s\n' 'Optional — drop shared packages only if nothing else needs them:'"
+      printf '%s\n' "printf '%s\n' 'Optional — packages OmaBoot may have pulled (only if nothing else needs them):'"
       for pkg in "${have[@]}"; do
         case $pkg in
-          python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'Style carousel mockups'" ;;
+          python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'was used to draw Boot Themes carousel mockups'" ;;
           *) printf '%s\n' "printf '  • %s\n' $(printf %q "$pkg")" ;;
         esac
       done
+      printf '%s\n' "printf '%s\n' '────────────────────────────────'"
       printf '%s\n' "read -r -p 'Drop ${list}? [y/N] ' a"
       printf '%s\n' 'case $a in'
       printf '%s\n' "  [yY]|[yY][eE][sS]) omarchy pkg drop ${list} ;;"
@@ -61,6 +64,7 @@ launch_cleanup_floater() {
     ((${#have[@]})) && note "optional: omarchy pkg drop $list"
   fi
 }
+
 
 export OMABOOT_PLUGIN_DIR="$here"
 
