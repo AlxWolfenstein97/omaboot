@@ -150,11 +150,15 @@ omaboot current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. No theme-set hook here — last limine colour block stays until you uninstall or clear it. |
-| `./uninstall.sh` then disable / remove | Menu, cache/state gone; best-effort clear of the `### omaboot` colour block (**sudo**). Same class as Style → Unlock: boot paint may stay until you pick stock / Tokyo Night again — no floating-terminal retry. Shared packages stay. Leaves a state tombstone so Service `--quiet` cannot resurrect the menu. Refresh + `rescanPlugins` so the shell drops the row. |
+| `./uninstall.sh` then disable / remove | Menu, cache/state gone; best-effort clear of the `### omaboot` colour block (**sudo**, floating terminal if needed). If you dismiss the password prompt, Limine stays painted — run `omaboot clear` (or pick stock / Tokyo Night) before remove. Shared packages stay. Tombstone + refresh + `rescanPlugins`. |
 
 Quiet Service install: one-shot package prompt, menu written only if `// omaboot:start`
 markers are missing (no rewrite every boot).
 | `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
+
+**Prepare before removal** if you might dismiss the sudo prompt: run
+`omaboot clear` (or pick Tokyo Night in Boot Themes) while the plugin is still
+installed, then uninstall.
 
 **Full wipe** — copy-paste to remove plugin wiring *and* the shared package this
 installer may have pulled (skip the `pkg drop` line if something else still
@@ -165,6 +169,16 @@ needs Pillow):
 omarchy plugin disable io.github.alxwolfenstein97.omaboot
 omarchy plugin remove io.github.alxwolfenstein97.omaboot
 omarchy pkg drop python-pillow
+```
+
+## Fresh VM smoke test
+
+```sh
+omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
+# Style → Boot Themes → pick a loud theme (Hackerman); reboot → Limine matches
+# Uninstall path: ./uninstall.sh should open a sudo terminal to clear the
+# ### omaboot block if passwordless sudo is unavailable — accept it, then
+# confirm limine.conf has no omaboot markers.
 ```
 
 ## Limits, honestly
