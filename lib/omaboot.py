@@ -23,7 +23,39 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont
+
+
+
+class _PilProxy:
+    """Lazy PIL module stand-in — bare Image.foo works; clear needs no pillow."""
+
+    __slots__ = ("_name", "_mod")
+
+    def __init__(self, name: str):
+        object.__setattr__(self, "_name", name)
+        object.__setattr__(self, "_mod", None)
+
+    def _load(self):
+        mod = object.__getattribute__(self, "_mod")
+        if mod is not None:
+            return mod
+        from PIL import Image as _Image, ImageDraw as _ImageDraw, ImageFont as _ImageFont
+
+        mapping = {"Image": _Image, "ImageDraw": _ImageDraw, "ImageFont": _ImageFont}
+        for key, value in mapping.items():
+            object.__setattr__(globals()[key], "_mod", value)
+        return object.__getattribute__(self, "_mod")
+
+    def __getattr__(self, item: str):
+        return getattr(self._load(), item)
+
+    def __repr__(self) -> str:
+        return f"<lazy PIL.{object.__getattribute__(self, '_name')}>"
+
+
+Image = _PilProxy("Image")
+ImageDraw = _PilProxy("ImageDraw")
+ImageFont = _PilProxy("ImageFont")
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omaboot"
 BLOCK_START = "### omaboot:start"

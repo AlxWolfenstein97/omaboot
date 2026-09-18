@@ -39,22 +39,76 @@ launch_cleanup_floater() {
     printf '%s\n' 'else'
     printf '%s\n' "  printf 'clear failed — limine.conf may still have ### omaboot markers\n' >&2"
     printf '%s\n' 'fi'
+
+# --- itemized optional drops (scan installed; one y/N each) ---
     if ((${#have[@]})); then
       printf '%s\n' ''
-      printf '%s\n' "printf '%s\n' 'Optional — packages OmaBoot may have pulled (only if nothing else needs them):'"
+      printf '%s\n' "printf '%s\n' 'Optional package drops — scanned; only installed packages listed.'"
+      printf '%s\n' "printf '%s\n' 'Answer n / Enter to keep. Close with Done when finished.'"
       for pkg in "${have[@]}"; do
         case $pkg in
-          python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'was used to draw Boot Themes carousel mockups'" ;;
-          *) printf '%s\n' "printf '  • %s\n' $(printf %q "$pkg")" ;;
+          python-pillow)
+            printf '%s\n' "printf '%s\n' ''"
+            printf '%s\n' "printf '%s\n' 'python-pillow'"
+            printf '%s\n' "printf '%s\n' '  Used by Style carousel plugins (OmaBoot/OmaVT/OmaOBS/OmaHud/OmaCursor/OmaTTY).'"
+            printf '%s\n' "printf '%s\n' '  MangoHud/goverlay and other apps may also depend on it.'"
+            printf '%s\n' "printf '%s\n' '  Removing it breaks Style mockups until reinstalled; clear/uninstall still work without it.'"
+            printf '%s\n' "req=\$(pacman -Qi python-pillow 2>/dev/null | awk -F': ' '/^Required By/{print \$2}')"
+            printf '%s\n' "printf '  pacman Required By: %s\n' \"\${req:-none}\""
+            printf '%s\n' "read -r -p 'Drop python-pillow? [y/N] ' a"
+            printf '%s\n' "case \$a in"
+            printf '%s\n' "  [yY]|[yY][eE][sS])"
+            printf '%s\n' "    if omarchy pkg drop python-pillow; then printf 'dropped python-pillow\n'"
+            printf '%s\n' "    else printf 'not dropped (other packages still need it — that is fine)\n'; fi"
+            printf '%s\n' "    ;;"
+            printf '%s\n' "  *) printf 'kept python-pillow\n' ;;"
+            printf '%s\n' "esac"
+            ;;
+          terminus-font)
+            printf '%s\n' "printf '%s\n' ''"
+            printf '%s\n' "printf '%s\n' 'terminus-font — Terminus console faces for TTY Fonts'"
+            printf '%s\n' "read -r -p 'Drop terminus-font? [y/N] ' a"
+            printf '%s\n' "case \$a in"
+            printf '%s\n' "  [yY]|[yY][eE][sS]) omarchy pkg drop terminus-font && printf 'dropped terminus-font\n' || printf 'not dropped\n' ;;"
+            printf '%s\n' "  *) printf 'kept terminus-font\n' ;;"
+            printf '%s\n' "esac"
+            ;;
+          python-numpy)
+            printf '%s\n' "printf '%s\n' ''"
+            printf '%s\n' "printf '%s\n' 'python-numpy — fast Adwaita cursor remaps (OmaCursor)'"
+            printf '%s\n' "req=\$(pacman -Qi python-numpy 2>/dev/null | awk -F': ' '/^Required By/{print \$2}')"
+            printf '%s\n' "printf '  pacman Required By: %s\n' \"\${req:-none}\""
+            printf '%s\n' "read -r -p 'Drop python-numpy? [y/N] ' a"
+            printf '%s\n' "case \$a in"
+            printf '%s\n' "  [yY]|[yY][eE][sS])"
+            printf '%s\n' "    if omarchy pkg drop python-numpy; then printf 'dropped python-numpy\n'"
+            printf '%s\n' "    else printf 'not dropped (still required elsewhere — fine)\n'; fi"
+            printf '%s\n' "    ;;"
+            printf '%s\n' "  *) printf 'kept python-numpy\n' ;;"
+            printf '%s\n' "esac"
+            ;;
+          adw-gtk-theme)
+            printf '%s\n' "printf '%s\n' ''"
+            printf '%s\n' "printf '%s\n' 'adw-gtk-theme — GTK theme Chroma paints over'"
+            printf '%s\n' "read -r -p 'Drop adw-gtk-theme? [y/N] ' a"
+            printf '%s\n' "case \$a in"
+            printf '%s\n' "  [yY]|[yY][eE][sS]) omarchy pkg drop adw-gtk-theme && printf 'dropped adw-gtk-theme\n' || printf 'not dropped\n' ;;"
+            printf '%s\n' "  *) printf 'kept adw-gtk-theme\n' ;;"
+            printf '%s\n' "esac"
+            ;;
+          *)
+            printf '%s\n' "printf '%s\n' ''"
+            printf '%s\n' "printf 'Package: %s\n' $(printf %q "$pkg")"
+            printf '%s\n' "read -r -p \"Drop $pkg? [y/N] \" a"
+            printf '%s\n' "case \$a in"
+            printf '%s\n' "  [yY]|[yY][eE][sS]) omarchy pkg drop $pkg && printf 'dropped\n' || printf 'not dropped\n' ;;"
+            printf '%s\n' "  *) printf 'kept\n' ;;"
+            printf '%s\n' "esac"
+            ;;
         esac
       done
-      printf '%s\n' "printf '%s\n' '────────────────────────────────'"
-      printf '%s\n' "read -r -p 'Drop ${list}? [y/N] ' a"
-      printf '%s\n' 'case $a in'
-      printf '%s\n' "  [yY]|[yY][eE][sS]) omarchy pkg drop ${list} ;;"
-      printf '%s\n' "  *) printf 'skipped package drop\n' ;;"
-      printf '%s\n' 'esac'
     fi
+
   } >"$script"
   chmod 755 "$script"
   if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
