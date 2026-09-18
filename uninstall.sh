@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #
 # Menu + cache/state. Opens a floating terminal to clear the ### omaboot Limine
-# colour block (sudo) — we clean up our extra paint more carefully than stock
-# Omarchy does for its own stuff. Optional y/N pkg drop in the same floater.
-# Omarchy's plugin remove does not run this script (dir delete only).
+# colour block (sudo) — we clean up our extra paint. Optional y/N pkg drop in
+# the same floater. Omarchy's plugin remove does not run this script.
 #
 set -euo pipefail
 
@@ -15,7 +14,6 @@ menu_lock="$HOME/.local/state/omarchy/style-extenders/menu.lock"
 
 note() { printf 'omaboot: %s\n' "$1"; }
 
-# One floater: reset Limine paint, then optional shared-package drop.
 launch_cleanup_floater() {
   local -a have=()
   local pkg
@@ -27,19 +25,30 @@ launch_cleanup_floater() {
   mkdir -p "$state"
   {
     printf '%s\n' '#!/usr/bin/env bash' 'set -uo pipefail'
-    printf '%s\n' "printf 'OmaBoot uninstall — clearing ### omaboot Limine colour block (sudo)\\n'"
+    printf '%s\n' "printf '%s\n' 'OmaBoot — uninstall'"
+    printf '%s\n' "printf '%s\n' '────────────────────────────────'"
+    printf '%s\n' "printf '%s\n' 'Will remove / reset (sudo):'"
+    printf '%s\n' "printf '%s\n' '  • ### omaboot colour block in /boot/limine.conf'"
+    printf '%s\n' "printf '%s\n' '────────────────────────────────'"
+    printf '%s\n' "printf '%s\n' ''"
     printf '%s\n' "if $(printf '%q ' "$here/bin/omaboot" clear); then"
-    printf '%s\n' "  printf 'Limine colour block cleared\\n'"
+    printf '%s\n' "  printf 'Limine colour block cleared\n'"
     printf '%s\n' 'else'
-    printf '%s\n' "  printf 'clear failed — limine.conf may still have ### omaboot markers\\n' >&2"
+    printf '%s\n' "  printf 'clear failed — limine.conf may still have ### omaboot markers\n' >&2"
     printf '%s\n' 'fi'
     if ((${#have[@]})); then
       printf '%s\n' ''
-      printf '%s\n' "printf '\\nOptional: drop shared packages only if nothing else needs them.\\n'"
+      printf '%s\n' "printf '%s\n' 'Optional — drop shared packages only if nothing else needs them:'"
+      for pkg in "${have[@]}"; do
+        case $pkg in
+          python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'Style carousel mockups'" ;;
+          *) printf '%s\n' "printf '  • %s\n' $(printf %q "$pkg")" ;;
+        esac
+      done
       printf '%s\n' "read -r -p 'Drop ${list}? [y/N] ' a"
       printf '%s\n' 'case $a in'
       printf '%s\n' "  [yY]|[yY][eE][sS]) omarchy pkg drop ${list} ;;"
-      printf '%s\n' "  *) printf 'skipped package drop\\n' ;;"
+      printf '%s\n' "  *) printf 'skipped package drop\n' ;;"
       printf '%s\n' 'esac'
     fi
   } >"$script"
@@ -55,8 +64,6 @@ launch_cleanup_floater() {
 
 export OMABOOT_PLUGIN_DIR="$here"
 
-# Tombstone + disable first so Service --quiet cannot resurrect the Style row
-# while the floater is still prompting for sudo.
 mkdir -p "$state"
 touch "$state/uninstalled"
 if command -v omarchy >/dev/null 2>&1; then

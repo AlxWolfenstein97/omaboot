@@ -40,6 +40,7 @@ export OMABOOT_PLUGIN_DIR="$here"
 
 # Packages need sudo. Interactive install asks in this TTY; Service --quiet
 # opens one floating terminal once (pkgs-prompted) — not again every boot.
+# Floater prints a header of what will be installed before the password prompt.
 pull_pkgs() {
   local -a missing=()
   local pkg
@@ -58,6 +59,20 @@ pull_pkgs() {
 
   note "installing ${missing[*]}"
   if (( ! quiet )) && [[ -t 0 || -t 1 ]]; then
+    printf '%s\n' "OmaBoot — packages"
+    printf '%s\n' "────────────────────────────────"
+    printf '%s\n' "Will install (sudo / pacman):"
+    for pkg in "${missing[@]}"; do
+      case $pkg in
+        python-pillow) printf '  • %s — %s\n' "$pkg" "Style carousel mockups" ;;
+        python-numpy) printf '  • %s — %s\n' "$pkg" "fast Adwaita cursor remaps" ;;
+        terminus-font) printf '  • %s — %s\n' "$pkg" "Terminus console faces for TTY Fonts" ;;
+        adw-gtk-theme) printf '  • %s — %s\n' "$pkg" "GTK theme Chroma paints" ;;
+        *) printf '  • %s\n' "$pkg" ;;
+      esac
+    done
+    printf '%s\n' "────────────────────────────────"
+    printf '%s\n' ""
     if omarchy pkg add "${missing[@]}"; then
       rm -f "$state/pkgs-prompted"
       return 0
@@ -72,16 +87,38 @@ pull_pkgs() {
   fi
   mkdir -p "$state"
   touch "$state/pkgs-prompted"
-  local cmd="omarchy pkg add ${missing[*]}"
-  [[ -n ${PULL_PKGS_AFTER:-} ]] && cmd+=" && ${PULL_PKGS_AFTER}"
+  local script="$state/install-floater.sh"
+  {
+    printf '%s\n' '#!/usr/bin/env bash' 'set -uo pipefail'
+    printf '%s\n' "printf '%s\n' 'OmaBoot — packages'"
+    printf '%s\n' "printf '%s\n' '────────────────────────────────'"
+    printf '%s\n' "printf '%s\n' 'Will install (sudo / pacman):'"
+    for pkg in "${missing[@]}"; do
+      case $pkg in
+        python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'Style carousel mockups'" ;;
+        python-numpy) printf '%s\n' "printf '  • %s — %s\n' 'python-numpy' 'fast Adwaita cursor remaps'" ;;
+        terminus-font) printf '%s\n' "printf '  • %s — %s\n' 'terminus-font' 'Terminus console faces for TTY Fonts'" ;;
+        adw-gtk-theme) printf '%s\n' "printf '  • %s — %s\n' 'adw-gtk-theme' 'GTK theme Chroma paints'" ;;
+        *) printf '%s\n' "printf '  • %s\n' $(printf %q "$pkg")" ;;
+      esac
+    done
+    printf '%s\n' "printf '%s\n' '────────────────────────────────'"
+    printf '%s\n' "printf '%s\n' ''"
+    printf '%s\n' "omarchy pkg add ${missing[*]}"
+    if [[ -n ${PULL_PKGS_AFTER:-} ]]; then
+      printf '%s\n' "$PULL_PKGS_AFTER"
+    fi
+  } >"$script"
+  chmod 755 "$script"
   if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
     warn "sudo needed for ${missing[*]} — opening a floating terminal"
-    omarchy-launch-floating-terminal-with-presentation "$cmd" >/dev/null 2>&1 &
+    omarchy-launch-floating-terminal-with-presentation "bash $(printf %q "$script")" >/dev/null 2>&1 &
   else
-    warn "run: $cmd"
+    warn "run: omarchy pkg add ${missing[*]}"
   fi
   return 1
 }
+
 
 # Pillow draws Style carousel mockups — install before warming previews.
 # Interactive: ask in this TTY. Quiet/Service: one floating terminal once
