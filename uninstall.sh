@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
 # Clean-slate: menu, cache/state. Best-effort clear of the ### omaboot colour
-# block in limine.conf (sudo; floating terminal if password needed). If the
-# prompt is dismissed, Limine stays painted — prepare with `omaboot clear`
-# before remove.
+# block in limine.conf once (sudo -n / quiet). Omarchy's plugin remove does
+# not run this script — it only deletes the plugin dir — so do not rely on a
+# floating-terminal sudo dance here. Prepare before removal: `omaboot clear`
+# (or pick Tokyo Night) while the plugin is still installed.
 #
 set -euo pipefail
 
@@ -22,21 +23,13 @@ mkdir -p "$(dirname "$menu_lock")"
   "$here/bin/omaboot" uninstall-menu || true
 ) 9>"$menu_lock"
 
-# Best-effort theme reset (sudo). Prefer an immediate clear; if passwordless
-# sudo is unavailable, open one floating terminal so the reset still happens
-# instead of leaving Limine painted after the plugin is gone.
-reset_cmd="$here/bin/omaboot clear --quiet"
-if "$reset_cmd" 2>/dev/null; then
+# Best-effort once. No nested floating terminal — same class as quiet install:
+# sudo that needs a password is the user's job before they remove the plugin.
+if "$here/bin/omaboot" clear --quiet 2>/dev/null; then
   note "cleared omaboot limine colour block"
-elif sudo -n "$here/bin/omaboot" clear --quiet 2>/dev/null; then
-  note "cleared omaboot limine colour block"
-elif command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
-  note "sudo needed to reset Limine colours — opening a floating terminal"
-  omarchy-launch-floating-terminal-with-presentation \
-    "$here/bin/omaboot clear" >/dev/null 2>&1 || true
-  note "if you dismiss that prompt, Limine stays painted — run: $here/bin/omaboot clear"
 else
-  note "limine colour block left in place (sudo needed) — prepare before removal: $here/bin/omaboot clear"
+  note "limine colour block left in place (sudo needed)"
+  note "prepare before removal: $here/bin/omaboot clear   # or Boot Themes → Tokyo Night"
 fi
 
 rm -rf "$state" "$cache"
@@ -51,7 +44,7 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "$plugin_id" >/dev/null 2>&1 || true
 fi
 
-note "done — no omaboot menu left; Limine colours cleared when sudo succeeded"
+note "done — no omaboot menu left; Limine paint only cleared if sudo worked"
 note "plugin files remain at $here until you omit/remove the plugin"
 note "optional: omarchy pkg drop python-pillow  # if nothing else needs Pillow"
 exit 0
