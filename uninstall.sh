@@ -30,11 +30,12 @@ launch_cleanup_floater() {
     printf '%s\n' "printf '%s\n' 'Style → Boot Themes — Limine colour mockups + apply'"
     printf '%s\n' "printf '%s\n' '────────────────────────────────'"
     printf '%s\n' "printf '%s\n' 'Will remove / reset (sudo):'"
-    printf '%s\n' "printf '%s\n' '  • ### omaboot colour block in /boot/limine.conf'"
+    printf '%s\n' "printf '%s\n' '  • ### omaboot colour block (managed markers)'"
+    printf '%s\n' "printf '%s\n' '  • restore Omarchy default Limine colours (Tokyo Night)'"
     printf '%s\n' "printf '%s\n' '────────────────────────────────'"
     printf '%s\n' "printf '%s\n' ''"
     printf '%s\n' "if $(printf '%q ' "$here/bin/omaboot" clear); then"
-    printf '%s\n' "  printf 'Limine colour block cleared\n'"
+    printf '%s\n' "  printf 'Omarchy default (Tokyo Night) Limine colours restored\n'"
     printf '%s\n' 'else'
     printf '%s\n' "  printf 'clear failed — limine.conf may still have ### omaboot markers\n' >&2"
     printf '%s\n' 'fi'

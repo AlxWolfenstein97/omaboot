@@ -189,9 +189,9 @@ ORPHANSCRUB
           if (( do_refresh )); then
             touch "$stamp"
             omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
-            if (( ! quiet )); then
-              omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
-            fi
+            # Quiet Service installs need rescan too — otherwise Style rows
+            # (esp. OBS Themes) stay invisible until a manual shell restart.
+            omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
           fi
         fi
       fi
@@ -209,6 +209,7 @@ ORPHANSCRUB
       stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
       touch "$stamp"
       omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
+      omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
     fi
   fi
 ) 9>"$menu_lock"

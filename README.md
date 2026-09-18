@@ -150,21 +150,22 @@ omaboot current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. No theme-set hook — last limine colour block stays. |
-| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Then a **floating terminal** runs `omaboot clear` (sudo) to strip our Limine paint — we clean up our extras. Same floater offers y/N `pkg drop`. |
+| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first**. Floater runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop`. |
 | `omarchy pkg drop python-pillow` | Optional. Only if nothing else needs Pillow. Offered in the uninstall floater. |
 
 Quiet Service install: one-shot package prompt; menu written only if `// omaboot:start`
-markers are missing; also scrubs orphan Style rows for sibling plugins whose
-dirs were deleted without `uninstall.sh`.
+markers are missing; `omarchy.menu refresh` + `shell rescanPlugins` so Style rows
+show without a manual shell restart; also scrubs orphan Style rows for siblings
+removed without `uninstall.sh`.
 
 Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
-`./uninstall.sh` first so the floater can clear Limine paint.
+`./uninstall.sh` first so the floater can restore Omarchy Tokyo Night boot paint.
 
 **Full wipe:**
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/uninstall.sh
-# floater: omaboot clear + optional pkg drop
+# floater: omaboot clear → Omarchy Tokyo Night + optional pkg drop
 omarchy plugin remove io.github.alxwolfenstein97.omaboot
 ```
 
@@ -173,8 +174,8 @@ omarchy plugin remove io.github.alxwolfenstein97.omaboot
 ```sh
 omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
 # Style → Boot Themes → pick a loud theme (Hackerman); reboot → Limine matches
-# ./uninstall.sh  → Style row gone; floater clears ### omaboot (sudo)
-# Confirm limine.conf has no ### omaboot markers after floater finishes
+# ./uninstall.sh  → Style row gone; floater restores Omarchy Tokyo Night (sudo)
+# Confirm limine.conf has no ### omaboot markers; term_background looks Tokyo Night
 ```
 
 ## Limits, honestly

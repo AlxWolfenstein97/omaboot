@@ -900,30 +900,101 @@ def set_theme(slug: str, *, quiet: bool = False, dry_run: bool = False) -> int:
     return 0
 
 
+def omarchy_default_colour_stanza() -> str:
+    """Omarchy stock Limine colours (Tokyo Night) — no ### omaboot markers.
+
+    Sourced from $OMARCHY_PATH/default/limine/limine.conf when present so
+    uninstall/clear matches what a fresh Omarchy install paints, not bare
+    Limine built-in greys.
+    """
+    default = omarchy_path() / "default" / "limine" / "limine.conf"
+    keys: dict[str, str] = {}
+    if default.is_file():
+        for line in default.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or ":" not in stripped:
+                continue
+            key, _, value = stripped.partition(":")
+            key = key.strip()
+            if key in WRITE_KEYS:
+                keys[key] = value.strip()
+    if len(keys) < len(WRITE_KEYS):
+        # Theme pack fallback when the packaged default conf is missing.
+        try:
+            palette = palette_from_theme("tokyo-night")
+            for key in WRITE_KEYS:
+                keys.setdefault(key, palette["limine"][key])
+        except Exception:  # noqa: BLE001 — best-effort fallback
+            pass
+    if not keys:
+        return ""
+    lines = [
+        "# Terminal colors (Tokyo Night palette — Omarchy default)",
+        "# Restored by omaboot clear / uninstall (not an omaboot managed block).",
+    ]
+    for key in WRITE_KEYS:
+        if key in keys:
+            lines.append(f"{key}: {keys[key]}")
+    return "\n".join(lines) + "\n"
+
+
+def _insert_before_entries(existing: str, stanza: str) -> str:
+    """Insert a colour stanza before the first boot entry; preserve the rest."""
+    if not stanza:
+        return existing
+    lines = existing.splitlines(keepends=True)
+    insert_at = len(lines)
+    for index, line in enumerate(lines):
+        if ENTRY_LINE_RE.match(line):
+            insert_at = index
+            break
+    prefix = lines[:insert_at]
+    suffix = lines[insert_at:]
+    while prefix and prefix[-1].strip() == "":
+        prefix.pop()
+    while suffix and suffix[0].strip() == "":
+        suffix.pop(0)
+    parts: list[str] = []
+    if prefix:
+        parts.append("".join(prefix).rstrip("\n") + "\n\n")
+    parts.append(stanza if stanza.endswith("\n") else stanza + "\n")
+    if suffix:
+        parts.append("\n" + "".join(suffix).lstrip("\n"))
+        if not parts[-1].endswith("\n"):
+            parts[-1] += "\n"
+    return "".join(parts)
+
+
 def clear_limine_colours(*, quiet: bool = False, dry_run: bool = False) -> int:
-    """Strip the omaboot managed colour block; leave boot entries / cmdline alone."""
+    """Strip omaboot markers and restore Omarchy default (Tokyo Night) colours.
+
+    Bare Limine greys are not what Omarchy ships — uninstall / clear should
+    leave the familiar Omarchy boot look, not stock Limine.
+    """
     existing = read_limine_conf()
     has_block = BLOCK_START in existing
     has_loose = any(_is_managed_assignment(ln) for ln in existing.splitlines())
-    if not has_block and not has_loose:
-        if not quiet:
-            note("no omaboot colour block in limine.conf")
-        return 0
-    cleaned = _strip_managed_outside_block(existing)
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    if not cleaned.endswith("\n"):
-        cleaned += "\n"
+    cleaned = _strip_managed_outside_block(existing) if (has_block or has_loose) else existing
+    stanza = omarchy_default_colour_stanza()
+    restored = _insert_before_entries(cleaned, stanza) if stanza else cleaned
+    restored = re.sub(r"\n{3,}", "\n\n", restored)
+    if not restored.endswith("\n"):
+        restored += "\n"
     if dry_run:
-        sys.stdout.write(cleaned)
+        sys.stdout.write(restored)
         return 0
-    write_limine_conf(cleaned)
+    if restored == existing and not has_block and not has_loose:
+        if not quiet:
+            note("limine.conf already looks like Omarchy default colours")
+        return 0
+    write_limine_conf(restored)
     state = paths()["state"]
     for name in ("current", "last-block.conf"):
         path = state / name
         path.unlink(missing_ok=True)
     if not quiet:
-        note(f"cleared omaboot colours from {limine_conf_path()}")
-        note("boot entries and cmdline left untouched")
+        note(f"restored Omarchy default (Tokyo Night) colours in {limine_conf_path()}")
+        note("boot entries and cmdline left untouched; no ### omaboot markers")
     return 0
 
 
@@ -1144,7 +1215,10 @@ def build_parser() -> argparse.ArgumentParser:
     setter.add_argument("--dry-run", action="store_true", help="Print patched conf to stdout")
     setter.set_defaults(func=cmd_set)
 
-    clear = sub.add_parser("clear", help="Remove omaboot colour block from limine.conf (sudo)")
+    clear = sub.add_parser(
+        "clear",
+        help="Restore Omarchy default (Tokyo Night) Limine colours; drop ### omaboot markers (sudo)",
+    )
     clear.add_argument("--quiet", action="store_true")
     clear.add_argument("--dry-run", action="store_true")
     clear.set_defaults(func=cmd_clear)

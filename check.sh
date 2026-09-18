@@ -137,6 +137,28 @@ grep -q '### omaboot:start' "$tmp/limine-bare.conf" && pass "append block when m
 grep -q 'custom_flag=1' "$tmp/limine-bare.conf" && pass "bare cmdline kept" || bad "bare cmdline kept"
 grep -q 'interface_branding: Custom Box' "$tmp/limine-bare.conf" && pass "custom branding kept" || bad "custom branding kept"
 
+# clear → Omarchy default Tokyo Night colours, no ### omaboot markers
+mkdir -p "$tmp/omarchy/default/limine"
+cp /usr/share/omarchy/default/limine/limine.conf "$tmp/omarchy/default/limine/limine.conf" 2>/dev/null \
+  || cat >"$tmp/omarchy/default/limine/limine.conf" <<'EOF'
+interface_branding_color: 9ece6a
+interface_help_color: 9ece6a
+interface_help_color_bright: 9ece6a
+term_background: 1a1b26
+backdrop: 1a1b26
+term_palette: 15161e;f7768e;9ece6a;e0af68;7aa2f7;bb9af7;7dcfff;a9b1d6
+term_palette_bright: 414868;f7768e;9ece6a;e0af68;7aa2f7;bb9af7;7dcfff;c0caf5
+term_foreground: c0caf5
+term_foreground_bright: c0caf5
+term_background_bright: 24283b
+EOF
+export OMARCHY_PATH="$tmp/omarchy"
+"$here/bin/omaboot" clear --quiet
+grep -q '### omaboot:start' "$tmp/limine-bare.conf" && bad "clear left omaboot markers" || pass "clear dropped omaboot markers"
+grep -q 'term_background: 1a1b26' "$tmp/limine-bare.conf" && pass "clear restored Omarchy Tokyo Night bg" || bad "clear restored Omarchy Tokyo Night bg"
+grep -q 'custom_flag=1' "$tmp/limine-bare.conf" && pass "clear kept cmdline" || bad "clear kept cmdline"
+grep -q 'interface_branding: Custom Box' "$tmp/limine-bare.conf" && pass "clear kept branding text" || bad "clear kept branding text"
+
 if command -v omarchy >/dev/null 2>&1; then
   if omarchy plugin validate "$here" >/dev/null 2>&1; then
     pass "omarchy plugin validate"
