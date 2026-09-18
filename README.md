@@ -173,9 +173,13 @@ omarchy plugin remove io.github.alxwolfenstein97.omaboot
 
 ```sh
 omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
-# Style → Boot Themes → pick a loud theme (Hackerman); reboot → Limine matches
-# ./uninstall.sh  → Style row gone; floater restores Omarchy Tokyo Night (sudo)
-# Confirm limine.conf has no ### omaboot markers; term_background looks Tokyo Night
+# Style → Boot Themes appears without a shell restart; carousel tiles warm (needs python-pillow)
+# Pick a loud theme; confirm the surface updates (reboot → Limine matches; uninstall restores Omarchy Tokyo Night)
+# Skip install floater → logout/reboot → floater returns (shell restart does not re-nag)
+# Parallel Style plugins share one Pillow floater; siblings only ask for their own missing pkgs
+# ./uninstall.sh → reset floater (omaboot clear → Tokyo Night, no ### omaboot markers) + optional itemized pkg drop (Pillow notes Required By)
+# Skip remove floater + disable → reinstall → uninstall again → complete the floater
+# With mangohud/goverlay kept, Pillow drop may fail — fine; clear/uninstall still work without Pillow
 ```
 
 ## Limits, honestly
