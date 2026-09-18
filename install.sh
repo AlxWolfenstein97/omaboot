@@ -30,8 +30,25 @@ pkgs_stamp="$runtime_dir/pkgs-prompted"
 # Style menu and package floaters can run again (old quiet-exit left peeps stuck
 # with no floater after wipe).
 if [[ -f $state/uninstalled ]]; then
-  rm -f "$state/uninstalled" "$pkgs_stamp" \
-    "$state/udev-prompted" "$state/udev-skipped" 2>/dev/null || true
+  # Per-plugin prompt stamps + shared Pillow claim. Claim survives an ignored
+  # floater and would block pillow-only plugins (OmaBoot/OmaVT/OmaOBS) on
+  # same-session reinstall — drop it with the tombstone. Shell restart does
+  # *not* clear these (XDG_RUNTIME_DIR); only logout/reboot or reinstall.
+  rm -f "$state/uninstalled" "$pkgs_stamp"     "$runtime_dir/drm-prompted"     "$state/udev-prompted" "$state/udev-skipped" 2>/dev/null || true
+  style_rt="${XDG_RUNTIME_DIR:-/tmp}/omarchy-style-extenders"
+  mkdir -p "$style_rt"
+  (
+    flock 8
+    ledger="$style_rt/shared-pkgs-claimed"
+    if [[ -f $ledger ]]; then
+      grep -vxF python-pillow "$ledger" >"$ledger.tmp" 2>/dev/null || true
+      if [[ -s $ledger.tmp ]]; then
+        mv -f "$ledger.tmp" "$ledger"
+      else
+        rm -f "$ledger" "$ledger.tmp"
+      fi
+    fi
+  ) 8>"$style_rt/pkgs.lock"
 fi
 
 
@@ -43,7 +60,8 @@ chmod 755 "$here"/bin/* "$here/check.sh" \
 export OMABOOT_PLUGIN_DIR="$here"
 
 # Packages need sudo. Shared python-pillow is claimed under a flock so parallel
-# quiet Services do not each open a Pillow floater. Scan pacman -Q first.
+# quiet Services do not each open a Pillow floater. Claim is session-scoped;
+# same-session reinstall clears it with the uninstall tombstone (shell restart does not). Scan pacman -Q first.
 # Floater: plugin header + missing pkgs only; closable via Done / default answers.
 pull_pkgs() {
   local -a missing=()
