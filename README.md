@@ -103,21 +103,28 @@ fallback row) is kept as
 
 ## Marketplace consent (hooks & Style menu)
 
-Installing the plugin only drops the code into your plugins folder. Writing a
-**Style** menu row or a **theme-set** hook edits your Omarchy config, so that
-stays **opt-in** (marketplace rule: no silent config overwrite).
+Installing the plugin only drops the code. Style menu rows and theme-set hooks
+edit your Omarchy config, so they stay **opt-in**.
 
-Interactive `./install.sh` asks once (default Yes). Or run later:
+**Fast path (no prompts)** — from your home folder:
 
 ```sh
-./tools/install-style-menu.sh
+~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh --yes
 ```
 
-(style-menu only (apply needs sudo; no theme-set hook))
+`--yes` means: I consent — arm everything this plugin supports, skip Y/n.
+Style menu helper: `./tools/install-style-menu.sh --yes`.
 
-Paths are under `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/`.
-Quiet shell restarts only restore what you already armed. `./uninstall.sh`
-clears the arming flags too.
+**Arm the whole family in one shot** (after all plugins are installed):
+
+```sh
+~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/arm-all-family.sh
+```
+
+Interactive `./install.sh` still asks [Y/n] if you prefer. Quiet shell restarts
+only restore what you already armed. `./uninstall.sh` clears the arm flags.
+
+
 
 ## Install
 
