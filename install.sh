@@ -11,8 +11,13 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 quiet=0
+with_style_menu=0
+with_theme_hook=0
+arm_all=0
 for arg in "$@"; do
   case $arg in
+    --with-style-menu) with_style_menu=1 ;;
+    --arm-all) arm_all=1 ;;
     --quiet) quiet=1 ;;
   esac
 done
@@ -53,6 +58,28 @@ fi
 
 
 mkdir -p "$state"
+
+# --- marketplace consent: Style menu / theme-set hook are opt-in -----------
+# Quiet Service must not write user config unless previously armed.
+# Interactive asks; --with-style-menu / --with-theme-hook / --arm-all force.
+# Existing hook/menu from older installs grandfather into armed-*.
+arm_theme_hook=0
+arm_style_menu=0
+menu_file="${menu_file:-$HOME/.config/omarchy/extensions/omarchy-menu.jsonc}"
+[[ -f $menu_file ]] && grep -qF '// omaboot:start' "$menu_file" && arm_style_menu=1
+(( with_style_menu || arm_all )) && arm_style_menu=1
+[[ -f $state/armed-theme-hook ]] && arm_theme_hook=1
+[[ -f $state/armed-style-menu ]] && arm_style_menu=1
+if (( ! quiet )); then
+  if (( ! arm_style_menu )); then
+    printf '%s' "omaboot: install Style → Boot Themes menu entry? [Y/n] "
+    read -r _ans || _ans=
+    case ${_ans:-Y} in [nN]|[nN][oO]) arm_style_menu=0 ;; *) arm_style_menu=1 ;; esac
+  fi
+fi
+if (( arm_theme_hook )); then touch "$state/armed-theme-hook"; else rm -f "$state/armed-theme-hook"; fi
+if (( arm_style_menu )); then touch "$state/armed-style-menu"; else rm -f "$state/armed-style-menu"; fi
+
 
 chmod 755 "$here"/bin/* "$here/check.sh" \
   "$here/install.sh" "$here/uninstall.sh" 2>/dev/null || true
@@ -179,6 +206,7 @@ pull_pkgs() {
 # (pkgs-prompted), once per login session (runtime stamp); again after reboot or reinstall.
 pull_pkgs python-pillow || true
 
+if (( arm_style_menu )); then
 # Style extenders share omarchy-menu.jsonc — flock so parallel Services don't
 # clobber each other. Interactive: always install-menu. Quiet: only if our
 # markers are absent (no rewrite/normalize every boot). Refresh only when written.
@@ -268,6 +296,9 @@ ORPHANSCRUB
     fi
   fi
 ) 9>"$menu_lock"
+else
+  note "Style menu skipped — run: $here/tools/install-style-menu.sh"
+fi
 if (( ! quiet )); then
   note "Style → Boot Themes is live; if the row is missing, run: omarchy-shell shell rescanPlugins"
 fi

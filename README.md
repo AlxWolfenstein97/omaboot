@@ -100,6 +100,25 @@ in-house capture from **Omarchy 4.0.3** (stock `linux` kernel entry, no EFI
 fallback row) is kept as
 [`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png).
 
+
+## Marketplace consent (hooks & Style menu)
+
+Installing the plugin only drops the code into your plugins folder. Writing a
+**Style** menu row or a **theme-set** hook edits your Omarchy config, so that
+stays **opt-in** (marketplace rule: no silent config overwrite).
+
+Interactive `./install.sh` asks once (default Yes). Or run later:
+
+```sh
+./tools/install-style-menu.sh
+```
+
+(style-menu only (apply needs sudo; no theme-set hook))
+
+Paths are under `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/`.
+Quiet shell restarts only restore what you already armed. `./uninstall.sh`
+clears the arming flags too.
+
 ## Install
 
 ```sh
