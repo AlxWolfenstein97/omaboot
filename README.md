@@ -121,6 +121,12 @@ Style menu helper: `./tools/install-style-menu.sh --yes`.
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/arm-all-family.sh
 ```
 
+**Wipe the whole family** (teardown + remove; skips pkg Y/n):
+
+```sh
+~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/wipe-all-family.sh
+```
+
 Interactive `./install.sh` still asks [Y/n] if you prefer. Quiet shell restarts
 only restore what you already armed. `./uninstall.sh` clears the arm flags.
 
