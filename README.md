@@ -189,8 +189,8 @@ omaboot current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. No theme-set hook — last limine colour block stays. |
-| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first**. Floater runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop`. |
-| `omarchy pkg drop python-pillow` | Optional. Itemized uninstall floater shows why + `pacman Required By` (MangoHud etc.). Clear/uninstall still work without Pillow. Drop may fail if other pkgs need it — that is fine. |
+| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first**. This TTY runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop`. |
+| `omarchy pkg drop python-pillow` | Optional. TTY uninstall prompts show why + `pacman Required By` (MangoHud etc.). Clear/uninstall still work without Pillow. Drop may fail if other pkgs need it — that is fine. |
 
 Quiet Service install (`--quiet`): **no package floaters** — restores already-armed
 wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
@@ -200,7 +200,7 @@ a manual shell restart; also scrubs orphan Style rows for siblings removed witho
 `uninstall.sh`.
 
 Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
-`./uninstall.sh` first so the floater can restore Omarchy Tokyo Night boot paint.
+`./uninstall.sh` first so this TTY can restore Omarchy Tokyo Night boot paint.
 
 **Full wipe** — one shot (`--yes` skips pkg Y/n and removes the plugin):
 
@@ -214,10 +214,10 @@ Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
 omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
 # Style → Boot Themes appears without a shell restart; carousel tiles warm (needs python-pillow)
 # Pick a loud theme; confirm the surface updates (reboot → Limine matches; uninstall restores Omarchy Tokyo Night)
-# Skip install floater → logout/reboot → floater returns (shell restart does not re-nag)
-# Parallel Style plugins share one Pillow floater; siblings only ask for their own missing pkgs
-# ./uninstall.sh → reset floater (omaboot clear → Tokyo Night, no ### omaboot markers) + optional itemized pkg drop (Pillow notes Required By)
-# Skip remove floater + disable → reinstall → uninstall again → complete the floater
+# plugin add alone + reboot → still no floater (quiet skips pkgs); run install.sh for deps/hooks
+# Parallel install.sh: shared Pillow flock; siblings only ask for their own missing pkgs
+# ./uninstall.sh → this TTY: omaboot clear → Tokyo Night + optional itemized pkg drop
+# Skip pkg prompts (n) + disable → reinstall → uninstall again → answer y if you want drops
 # With mangohud/goverlay kept, Pillow drop may fail — fine; clear/uninstall still work without Pillow
 ```
 
