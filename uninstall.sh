@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Menu + cache/state. Clears ### omaboot Limine colour block in this TTY (sudo)
-# + optional y/N pkg drop. --yes does both inline (no prompts). No floaters.
+# + optional y/N pkg drop. --yes does both inline (no prompts). Prompts stay in this TTY.
 # Omarchy's plugin remove does not run this script.
 #
 set -euo pipefail
@@ -34,7 +34,7 @@ try_pkg_drop() {
 }
 
 ask_pkg_drop() {
-  # Interactive — prompts in this terminal (no floater).
+  # Interactive — prompts in this terminal (this TTY).
   local -a have=()
   local pkg a req
   for pkg in "$@"; do
