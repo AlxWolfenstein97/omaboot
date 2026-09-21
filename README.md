@@ -11,9 +11,10 @@ keeps the install-day Tokyo Night hex. Your desktop wears Hackerman neon; the
 firmware menu still looks like 2024.
 
 OmaBoot closes that gap the same way Style → Unlock works for Plymouth: a
-labelled image picker, one mockup per installed theme, and an apply step that
-asks for sudo in a floating terminal. Boot is not user-land, so this is
-**not** tied to `omarchy theme set`.
+labelled image picker, one mockup per installed theme, then sudo in Omarchy’s
+floating terminal to patch `/boot/limine.conf`. Install / wipe stay in the
+TTY you started. Boot is not user-land, so apply is **not** tied to
+`omarchy theme set`.
 
 ## Goals (and honest limits)
 
@@ -167,9 +168,9 @@ omarchy plugin enable io.github.alxwolfenstein97.omaboot
 
 1. `bin/omaboot-switcher` renders PNG mockups into
    `~/.cache/omarchy/omaboot/previews/`, then opens `omarchy-menu-images`.
-2. On selection, Style launches a floating terminal running `omaboot-set`
+2. On selection, Style launches Omarchy’s floating terminal running `omaboot-set`
    (same privilege pattern as Unlock), which prompts for sudo and patches
-   `/boot/limine.conf`.
+   `/boot/limine.conf`. Install / uninstall / arm-all / wipe use the same TTY.
 3. Colour keys (`term_*`, `backdrop`, branding/help colours) live inside the
    managed block. Everything else in the file is preserved.
 
