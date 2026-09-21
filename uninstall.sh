@@ -34,17 +34,13 @@ try_pkg_drop() {
 }
 
 ask_pkg_drop() {
-  # Interactive TTY only — no floating terminal (harder to dismiss mid-cleanup).
+  # Interactive — prompts in this terminal (no floater).
   local -a have=()
   local pkg a req
   for pkg in "$@"; do
     pacman -Q "$pkg" &>/dev/null && have+=("$pkg")
   done
   ((${#have[@]})) || return 0
-  if [[ ! -t 0 && ! -t 1 ]]; then
-    note "no TTY — skip optional pkg drop (re-run from a terminal, or uninstall.sh --yes)"
-    return 0
-  fi
   note "optional package drops — n / Enter keeps; pacman may refuse if still required"
   for pkg in "${have[@]}"; do
     case $pkg in
@@ -109,16 +105,14 @@ if (( assume_yes )); then
   fi
   note "full wipe (--yes): trying package drops (kept if still required elsewhere)"
   try_pkg_drop python-pillow
-elif [[ -t 0 || -t 1 ]]; then
-  note "resetting Limine paint in this TTY (may prompt for sudo)"
+else
+  note "resetting Limine paint (may prompt for sudo)"
   if "$here/bin/omaboot" clear; then
     note "Omarchy default Limine colours restored"
   else
     note "clear failed — limine.conf may still have ### omaboot markers"
   fi
   ask_pkg_drop python-pillow
-else
-  note "no TTY — Limine paint / pkgs not cleared; re-run from a terminal or: uninstall.sh --yes"
 fi
 
 note "done — no omaboot menu left"
