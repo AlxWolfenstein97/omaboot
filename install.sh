@@ -143,7 +143,8 @@ pull_pkgs() {
   fi
 
   note "OmaBoot needs ${missing[*]} — Style → Boot Themes — Limine colour mockups + apply"
-  if (( ! quiet )) && [[ -t 0 || -t 1 ]]; then
+  # --yes / family oneshot: install inline (no floater). Interactive TTY same.
+  if (( assume_yes )) || { (( ! quiet )) && [[ -t 0 || -t 1 ]]; }; then
     printf '%s\n' "OmaBoot"
     printf '%s\n' "io.github.alxwolfenstein97.omaboot"
     printf '%s\n' "Style → Boot Themes — Limine colour mockups + apply"

@@ -165,8 +165,13 @@ omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 
 if (( assume_yes )); then
-  # privileged teardown floater (no Y/n) + best-effort package drops
-  launch_cleanup_floater
+  # inline Limine reset (no floater) + best-effort package drops
+  note "full wipe (--yes): resetting Limine paint inline"
+  if "$here/bin/omaboot" clear; then
+    note "Omarchy default Limine colours restored"
+  else
+    note "clear failed — limine.conf may still have ### omaboot markers"
+  fi
   note "full wipe (--yes): trying package drops (kept if still required elsewhere)"
   try_pkg_drop python-pillow
 else
