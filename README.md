@@ -192,10 +192,12 @@ omaboot current
 | `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first**. Floater runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop`. |
 | `omarchy pkg drop python-pillow` | Optional. Itemized uninstall floater shows why + `pacman Required By` (MangoHud etc.). Clear/uninstall still work without Pillow. Drop may fail if other pkgs need it — that is fine. |
 
-Quiet Service install: one-shot package prompt (Pillow claimed under a shared flock so parallel Style plugins do not each spam an install floater); menu written only if `// omaboot:start`
-markers are missing; `omarchy.menu refresh` + `shell rescanPlugins` so Style rows
-show without a manual shell restart; also scrubs orphan Style rows for siblings
-removed without `uninstall.sh`.
+Quiet Service install (`--quiet`): **no package floaters** — restores already-armed
+wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
+family `arm-all-family.sh`. Menu written only if `// omaboot:start` markers are
+missing; `omarchy.menu refresh` + `shell rescanPlugins` so Style rows show without
+a manual shell restart; also scrubs orphan Style rows for siblings removed without
+`uninstall.sh`.
 
 Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
 `./uninstall.sh` first so the floater can restore Omarchy Tokyo Night boot paint.
