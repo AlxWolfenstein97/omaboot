@@ -19,6 +19,21 @@ menu_lock="$HOME/.local/state/omarchy/style-extenders/menu.lock"
 
 note() { printf 'omaboot: %s\n' "$1"; }
 
+try_pkg_drop() {
+  # Best-effort: drop packages we may have pulled. If something else still
+  # needs them, pacman refuses and we leave them — that is fine.
+  local pkg
+  for pkg in "$@"; do
+    pacman -Q "$pkg" &>/dev/null || continue
+    if command -v omarchy >/dev/null 2>&1 && omarchy pkg drop "$pkg"; then
+      note "dropped $pkg"
+    else
+      note "kept $pkg (still required elsewhere or drop failed — fine)"
+    fi
+  done
+}
+
+
 launch_cleanup_floater() {
   local -a have=()
   local pkg
@@ -150,8 +165,10 @@ omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 
 if (( assume_yes )); then
-  # teardown only (clear Limine/VT/FONT) — no optional pkg Y/n
+  # privileged teardown floater (no Y/n) + best-effort package drops
   launch_cleanup_floater
+  note "full wipe (--yes): trying package drops (kept if still required elsewhere)"
+  try_pkg_drop python-pillow
 else
   launch_cleanup_floater python-pillow
 fi
