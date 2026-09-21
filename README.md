@@ -112,7 +112,7 @@ edit your Omarchy config, so they stay **opt-in**.
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh --yes
 ```
 
-`--yes` means: I consent — arm everything this plugin supports, skip Y/n.
+`--yes` means: I consent — arm everything this plugin supports, skip Y/n. Interactive `./install.sh` (no `--yes`) still asks — Workshop-safe; `--yes` / arm-all are optional shortcuts.
 Style menu helper: `./tools/install-style-menu.sh --yes`.
 
 **Arm the whole family in one shot** (after all plugins are installed):
@@ -141,26 +141,23 @@ only restore what you already armed. `./uninstall.sh` clears the arm flags.
 
 ## Install
 
-```sh
+Workshop-style one paste (enable + integrate; installer asks [Y/n]):
+
+```bash
 omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
+~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh
 ```
 
-That clones into `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot`.
-Or from a checkout:
+That clones into `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot` and arms hooks / Style after you
+confirm. Skip prompts: `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh --yes`.
 
-```sh
+Or from an existing checkout:
+
+```bash
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh
 omarchy plugin enable io.github.alxwolfenstein97.omaboot
 ```
 
-**Needs (installer pulls these if missing):**
-
-| Package | Why |
-|---------|-----|
-| `python-pillow` | Draws the Style → Boot Themes mockup PNGs. Without it the carousel is empty on first open. |
-
-Also needs Limine (`/boot/limine.conf`), Omarchy’s image picker, and sudo for
-apply. `install.sh` installs Pillow **before** warming mockups.
 
 ## How it works
 
