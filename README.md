@@ -95,14 +95,8 @@ captures instead.
 | ![Real Omarchy Limine — Tokyo Night QEMU reference with linux-omarchy, Snapshots, EFI fallback](reference-limine-tokyo-night.png) | ![OmaBoot mockup — same layout, Tokyo Night from colors.toml](preview-tokyo-night.png) |
 
 Hero at the top is the same chrome on **Hackerman**. The real shot above is the
-current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**) with solid
-**Tokyo Night** chrome — **4.0.4** QEMU tree painted with the **4.0.3** Limine
-palette so the menu stays readable without an asphalt wallpaper underlay. The
-mockup traces that silhouette from `colors.toml`. Kept alongside:
-[`reference-limine-tokyo-night-404-asphalt.png`](reference-limine-tokyo-night-404-asphalt.png)
-(same 4.0.4 capture, wallpaper still visible) and
-[`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png)
-(earlier **4.0.3** capture: stock `linux` entry, no EFI fallback row).
+current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**) on
+**Tokyo Night**; the mockup traces that silhouette from `colors.toml`.
 
 
 ## Marketplace consent (hooks & Style menu)
@@ -244,13 +238,9 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 ## Credits
 
 - **Layout reference:** [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png)
-  — **4.0.4** Limine tree (`linux-omarchy`, Snapshots, EFI fallback) with
-  **4.0.3** Tokyo Night colors painted solid for contrast; grey letterbox
-  cropped. Asphalt original:
-  [`reference-limine-tokyo-night-404-asphalt.png`](reference-limine-tokyo-night-404-asphalt.png).
-  Compare mockup: [`preview-tokyo-night.png`](preview-tokyo-night.png). Earlier
-  **4.0.3** capture (stock `linux`, no EFI fallback):
-  [`reference-limine-tokyo-night-legacy.png`](reference-limine-tokyo-night-legacy.png).
+  — QEMU capture of current Omarchy Limine on Tokyo Night (`linux-omarchy`,
+  Snapshots, EFI fallback; grey letterbox cropped). Compare mockup:
+  [`preview-tokyo-night.png`](preview-tokyo-night.png).
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships).
 - Sibling plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
