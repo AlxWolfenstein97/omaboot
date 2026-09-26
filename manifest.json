@@ -5,7 +5,7 @@
   "version": "1.1.3",
   "author": "AlxWolfenstein97",
   "license": "MIT",
-  "description": "Style menu picker with Limine boot mockups for every Omarchy theme. Patches only a managed colour block in limine.conf (sudo) and leaves boot entries alone.",
+  "description": "Style menu Limine boot colour picker. Not broken \u2014 read the git README to arm the Style menu after install.",
   "homepage": "https://github.com/AlxWolfenstein97/omaboot",
   "repository": "https://github.com/AlxWolfenstein97/omaboot",
   "kinds": [
