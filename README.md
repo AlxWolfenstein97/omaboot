@@ -113,22 +113,24 @@ edit your Omarchy config, so they stay **opt-in**.
 `--yes` means: I consent — arm everything this plugin supports, skip Y/n. Interactive `./install.sh` (no `--yes`) still asks — Workshop-safe; `--yes` / arm-all are optional shortcuts.
 Style menu helper: `./tools/install-style-menu.sh --yes`.
 
-**Arm the whole family in one shot** (after all plugins are installed):
+**Arm the whole family in one shot** (arms only what’s already installed — omit any `plugin add` you don’t want):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/arm-all-family.sh
 ```
 
 **Full wipe (this plugin)** — same ease as `install.sh --yes`
-(full teardown + `plugin remove`; best-effort `pkg drop` only for packages this install
-recorded pulling (pre-existing deps stay) — kept only when pacman still needs them elsewhere):
+(full teardown + `plugin remove`; ledger-only `pkg drop` — only packages this install
+recorded pulling; pre-existing deps stay; drop may fail and the package stays if something
+else still needs it — e.g. you installed Goverlay after we pulled Pillow — that’s fine):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/uninstall.sh --yes
 ```
 
 **Wipe the whole family** (runs each plugin’s `uninstall.sh --yes` — same full
-teardown as a single-plugin wipe; ledger-only pkg drops, no blanket shared-dep sweep):
+teardown as a single-plugin wipe; ledger-only pkg drops, no blanket shared-dep sweep —
+drop may fail and stay if something else still requires the package):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/wipe-all-family.sh
@@ -212,7 +214,7 @@ omaboot current
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. No theme-set hook — last limine colour block stays. |
 | `./uninstall.sh` then disable / remove | Menu + cache/state gone. Tombstone + disable **first** (quiet will not re-arm without a loud install). This TTY runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop` of packages this install recorded pulling. |
-| `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it. TTY prompts show why + `pacman Required By`. |
+| `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it; may fail/stay if something else still requires it. TTY prompts show why + `pacman Required By`. |
 
 Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
 family `arm-all-family.sh`. Menu written only if `// omaboot:start` markers are
@@ -223,7 +225,7 @@ a manual shell restart; also scrubs orphan Style rows for siblings removed witho
 Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
 `./uninstall.sh` first so this TTY can restore Omarchy Tokyo Night boot paint.
 
-**Full wipe** — one shot (`--yes` skips pkg Y/n, best-effort drops packages this install recorded pulling (if nothing else needs them), and removes the plugin):
+**Full wipe** — one shot (`--yes` skips pkg Y/n, ledger-only drops of packages this install recorded pulling (may fail and stay if something else still needs them — e.g. Goverlay after Pillow), and removes the plugin):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/uninstall.sh --yes
