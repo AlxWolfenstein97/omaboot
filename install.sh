@@ -157,6 +157,12 @@ pull_pkgs() {
   printf '%s\n' "────────────────────────────────"
   printf '%s\n' ""
   if omarchy pkg add "${missing[@]}"; then
+    mkdir -p "$state"
+    local pkg
+    for pkg in "${missing[@]}"; do
+      grep -qxF "$pkg" "$state/pkgs-installed" 2>/dev/null \
+        || printf '%s\n' "$pkg" >>"$state/pkgs-installed"
+    done
     rm -f "$pkgs_stamp"
     return 0
   fi
