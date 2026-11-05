@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""OmaBoot — Style-menu Limine boot palettes from any Omarchy theme.
+"""OmaBoot — Appearance-menu Limine boot palettes from any Omarchy theme.
 
 Discovers every theme with a colors.toml (no extra theme assets required),
-renders centered Limine-style mockups for the Style carousel, and patches
+renders centered Limine-style mockups for the Appearance carousel, and patches
 only a managed colour block in limine.conf (sudo). Boot entries and any
 custom cmdline stay untouched. Not hooked to theme-set — boot is not
 user-land and needs a password. Mockups are illustrative — Limine has no
@@ -347,7 +347,7 @@ def render_block(palette: dict[str, Any]) -> str:
         BLOCK_START,
         f"# Omarchy boot palette — managed by omaboot ({PLUGIN_ID})",
         f"# theme: {palette['slug']}",
-        "# Edit via Style → Boot Themes. Everything outside this block is left alone.",
+        "# Edit via Appearance → Extenders → Boot. Everything outside this block is left alone.",
     ]
     for key in WRITE_KEYS:
         lines.append(f"{key}: {palette['limine'][key]}")
@@ -549,7 +549,7 @@ def branding_for_mockups() -> str:
 
 
 # omarchy-menu-images thumbnails every source to 1536×864 (16:9) with
-# smartcrop BEFORE the Style carousel shows it in a 768×475 tile. Matching
+# smartcrop BEFORE the Appearance carousel shows it in a 768×475 tile. Matching
 # that size avoids a second crop. Current Limine chrome is dead-centered, so
 # side gutters are mostly empty — carousel crop barely touches the subject.
 MOCKUP_SIZE = (1536, 864)
@@ -1038,7 +1038,7 @@ def remove_marked(content: str, start: str, end: str) -> str:
 def menu_action() -> str:
     switcher = plugin_dir() / "bin" / "omaboot-switcher"
     setter = plugin_dir() / "bin" / "omaboot-set"
-    # Same privilege pattern as Style → Unlock: picker first, then a floating
+    # Same privilege pattern as Appearance → Unlock: picker first, then a floating
     # terminal so sudo can prompt for a password.
     return (
         f'theme="$({switcher})"; '
@@ -1058,10 +1058,10 @@ STYLE_EXTENDER_BLOCKS = (
 
 
 def normalize_style_extender_menu_order(menu_path: Path) -> None:
-    """Keep Style extender rows in a stable file order.
+    """Keep Extender rows in a stable file order.
 
     Each plugin's install-menu inserts at the top of the extensions object, so
-    whichever service warms last wins the first slot and the Style submenu
+    whichever service warms last wins the first slot and the Extenders submenu
     shuffles. Extract known blocks and rewrite them in a fixed sequence.
     """
     if not menu_path.is_file():
@@ -1096,16 +1096,41 @@ def normalize_style_extender_menu_order(menu_path: Path) -> None:
     if new != old:
         atomic_write(menu_path, new)
 
+EXTENDER_PARENT = '  "appearance.extenders": {"icon": "\U000f03d8", "label": "Extenders"},'
+
+
+def ensure_extender_parent(content: str) -> str:
+    """Define the shared Appearance → Extenders row once, before its children."""
+    if re.search(r'^[ \t]*"appearance\.extenders"[ \t]*:', content, re.M):
+        return content
+    brace = content.find("{")
+    if brace < 0:
+        raise RuntimeError("menu config has no root object")
+    return content[: brace + 1] + "\n" + EXTENDER_PARENT + content[brace + 1 :]
+
+
+def prune_extender_parent(content: str) -> str:
+    """Drop the shared parent once the last extender child is gone."""
+    if re.search(r'"appearance\.extenders\.[^"]+"', content):
+        return content
+    return re.sub(
+        r'^[ \t]*"appearance\.extenders"[ \t]*:[ \t]*\{[^\n]*\},[ \t]*\n?',
+        "",
+        content,
+        flags=re.M,
+    )
+
+
 def install_menu_entry() -> None:
     path = paths()["menu"]
     content = path.read_text(encoding="utf-8") if path.is_file() else "{\n}\n"
     content = remove_marked(content, MENU_START, MENU_END)
     entries = [
         (
-            "style.boot",
+            "appearance.extenders.boot",
             {
                 "icon": "󰣆",
-                "label": "Boot Themes",
+                "label": "Boot",
                 "aliases": ["boot", "limine", "bootloader"],
                 "description": "Preview Omarchy palettes on a Limine mockup and patch /boot/limine.conf colours (sudo)",
                 "action": menu_action(),
@@ -1120,7 +1145,8 @@ def install_menu_entry() -> None:
         body.append(f"  {json.dumps(key)}: {json.dumps(value, ensure_ascii=False)},")
     body.append(MENU_END)
     insertion = "\n".join(body) + "\n"
-    atomic_write(path, content[: brace + 1] + "\n" + insertion + content[brace + 1 :])
+    updated = content[: brace + 1] + "\n" + insertion + content[brace + 1 :]
+    atomic_write(path, ensure_extender_parent(updated))
 
 
     normalize_style_extender_menu_order(path)
@@ -1132,7 +1158,8 @@ def uninstall_menu_entry() -> None:
         return
     content = path.read_text(encoding="utf-8")
     if MENU_START in content:
-        atomic_write(path, remove_marked(content, MENU_START, MENU_END))
+        content = remove_marked(content, MENU_START, MENU_END)
+        atomic_write(path, prune_extender_parent(content))
 
 
 def cmd_list(_: argparse.Namespace) -> int:
@@ -1256,8 +1283,8 @@ def build_parser() -> argparse.ArgumentParser:
     clear.set_defaults(func=cmd_clear)
 
     sub.add_parser("switcher", help="Open image picker; print chosen slug").set_defaults(func=cmd_switcher)
-    sub.add_parser("install-menu", help="Add Style → Boot Themes").set_defaults(func=cmd_install_menu)
-    sub.add_parser("uninstall-menu", help="Remove Style → Boot Themes").set_defaults(func=cmd_uninstall_menu)
+    sub.add_parser("install-menu", help="Add Appearance → Extenders → Boot").set_defaults(func=cmd_install_menu)
+    sub.add_parser("uninstall-menu", help="Remove Appearance → Extenders → Boot").set_defaults(func=cmd_uninstall_menu)
 
     return parser
 

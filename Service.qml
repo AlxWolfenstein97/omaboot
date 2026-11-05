@@ -4,7 +4,7 @@ import Quickshell.Io
 // OmaBoot service plugin.
 //
 // Palette patching lives in bin/omaboot. This component only re-runs the
-// installer at shell start so Style → Boot Themes comes back after a refresh.
+// installer at shell start so Appearance → Extenders → Boot comes back after a refresh.
 // There is intentionally no theme-set hook — limine.conf needs sudo.
 Item {
     id: root

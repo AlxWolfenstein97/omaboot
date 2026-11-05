@@ -1,7 +1,7 @@
 # OmaBoot
 
 **Omarchy themes your desktop. OmaBoot carries the same palette into the Limine
-bootloader — mockup previews in the Style menu, then a managed colour block in
+bootloader — mockup previews in the Appearance menu, then a managed colour block in
 `/boot/limine.conf`.**
 
 ![OmaBoot on Hackerman — Limine mockup wearing the Omarchy palette](preview.png)
@@ -10,7 +10,7 @@ Stock Omarchy paints Hyprland, the terminal, and your GTK apps. The boot menu
 keeps the install-day Tokyo Night hex. Your desktop wears Hackerman neon; the
 firmware menu still looks like 2024.
 
-OmaBoot closes that gap the same way Style → Unlock works for Plymouth: a
+OmaBoot closes that gap the same way Appearance → Unlock works for Plymouth: a
 labelled image picker, one mockup per installed theme, then sudo in Omarchy’s
 floating terminal to patch `/boot/limine.conf`. Install / wipe stay in the
 TTY you started. Boot is not user-land, so apply is **not** tied to
@@ -18,7 +18,7 @@ TTY you started. Boot is not user-land, so apply is **not** tied to
 
 ## Goals (and honest limits)
 
-These Style plugins extend Omarchy’s theme system **without requiring theme
+These plugins extend Omarchy’s theme system **without requiring theme
 authors — or you — to ship anything extra**. Official themes, your forks, and
 third-party installs all work as long as they have a `colors.toml`. That
 “every theme” contract is intentional: once the desktop can follow farther,
@@ -31,7 +31,7 @@ making *another* theme is more worth it. Longer origin / stop-line:
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
 | True Theme Vibe | Mockups track **current** Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colours look like on bare metal. Still **not** a framebuffer capture. |
 | Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size). Current Limine is dead-centered, so the 768×475 tile crop mostly shaves empty sides. |
-| Snappy pickers | Mockups warm in parallel across CPU cores and **skip tiles whose `colors.toml` / branding / layout haven’t changed** — reopen is near-instant. On par with Omarchy’s stock Style carousels; Cursors often feels even snappier. |
+| Snappy pickers | Mockups warm in parallel across CPU cores and **skip tiles whose `colors.toml` / branding / layout haven’t changed** — reopen is near-instant. On par with Omarchy’s stock Appearance carousels; Cursors often feels even snappier. |
 
 We are **not** putting WYSIWYG screenshots in themes. Themes stay palette-only;
 OmaBoot draws the chrome itself. True pixel-identical boot art would need QEMU /
@@ -42,14 +42,14 @@ does not, so we draw from the palette against a single Limine layout.
 ### Why a picker (and no theme-set hook)?
 
 Boot needs sudo and only shows up after reboot — not something to rewrite on
-every `omarchy theme set`. The Style carousel is still the point: preview how
+every `omarchy theme set`. The Appearance carousel is still the point: preview how
 Limine would wear **every** installed theme’s palette without rebooting twenty
 times. Same “one surface, many themes, faster than manual” idea as OmaOBS /
 OmaCursor / OmaVT.
 
 ## What you get
 
-- **Style → Boot Themes** in the Omarchy menu — same carousel picker as Unlock /
+- **Appearance → Extenders → Boot** in the Omarchy menu — same carousel picker as Unlock /
   Theme / Background.
 - **Live theme discovery** — every Omarchy theme with a `colors.toml` under
   `~/.config/omarchy/themes` or `$OMARCHY_PATH/themes`.
@@ -78,7 +78,7 @@ a joke — still not pixel-identical UEFI output, but the *vibe* is there.
 2. Trace that chrome in Pillow: centered branding, help under the title,
    `-> linux-omarchy` / Snapshots tree, `[+] N | timestamp` rows, inverse
    selection, `EFI fallback`, package version footer. Dead-centered so the
-   Style carousel crop barely matters.
+   Appearance carousel crop barely matters.
 3. Recolour the same silhouette from every installed theme’s `colors.toml`.
    Themes stay palette-only; the plugin owns the art.
 
@@ -99,9 +99,9 @@ current Limine layout (`linux-omarchy`, Snapshots, **EFI fallback**) on
 **Tokyo Night**; the mockup traces that silhouette from `colors.toml`.
 
 
-## Marketplace consent (hooks & Style menu)
+## Marketplace consent (hooks & Appearance menu)
 
-Installing the plugin only drops the code. Style menu rows and theme-set hooks
+Installing the plugin only drops the code. Appearance menu rows and theme-set hooks
 edit your Omarchy config, so they stay **opt-in**.
 
 **Fast path (no prompts)** — from your home folder:
@@ -111,7 +111,7 @@ edit your Omarchy config, so they stay **opt-in**.
 ```
 
 `--yes` means: I consent — arm everything this plugin supports, skip Y/n. Interactive `./install.sh` (no `--yes`) still asks — Workshop-safe; `--yes` / arm-all are optional shortcuts.
-Style menu helper: `./tools/install-style-menu.sh --yes`.
+Appearance menu helper: `./tools/install-style-menu.sh --yes`.
 
 **Arm the whole family in one shot** (arms only what’s already installed — omit any `plugin add` you don’t want):
 
@@ -142,7 +142,7 @@ drop may fail and stay if something else still requires the package):
 Harmless sticky note at `~/.local/state/omarchy/<plugin>/uninstalled`. The next
 install (quiet or loud) uses it to clear same-session `/run` package-prompt
 stamps / shared Pillow claims, then deletes the note. Logout/reboot clears those
-stamps anyway. Style stays off after wipe because armed state is gone — not
+stamps anyway. The menu entry stays off after wipe because armed state is gone — not
 because of the stone. Normal boom-out → loud boom-in (arm-all) does **not** need
 `--purge-tombstones`.
 
@@ -169,7 +169,7 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh
 ```
 
-That clones into `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot` and arms hooks / Style after you
+That clones into `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot` and arms hooks and the Appearance menu after you
 confirm. Skip prompts: `~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/install.sh --yes`.
 
 Or from an existing checkout:
@@ -184,7 +184,7 @@ omarchy plugin enable io.github.alxwolfenstein97.omaboot
 
 1. `bin/omaboot-switcher` renders PNG mockups into
    `~/.cache/omarchy/omaboot/previews/`, then opens `omarchy-menu-images`.
-2. On selection, Style launches Omarchy’s floating terminal running `omaboot-set`
+2. On selection, the menu launches Omarchy’s floating terminal running `omaboot-set`
    (same privilege pattern as Unlock), which prompts for sudo and patches
    `/boot/limine.conf`. Install / uninstall / arm-all / wipe use the same TTY.
 3. Colour keys (`term_*`, `backdrop`, branding/help colours) live inside the
@@ -210,10 +210,10 @@ omaboot current
 | `./uninstall.sh` then disable / remove | Menu + cache/state gone. Quiet Service only restores what was already armed — after wipe that’s nothing until a loud install. This TTY runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop` of packages this install recorded pulling. |
 | `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it; may fail/stay if something else still requires it. TTY prompts show why + `pacman Required By`. |
 
-Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
+Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + menu consent come from interactive `install.sh`, `--yes`, or
 family `arm-all-family.sh`. Menu written only if `// omaboot:start` markers are
-missing; `omarchy.menu refresh` + `shell rescanPlugins` so Style rows show without
-a manual shell restart; also scrubs orphan Style rows for siblings removed without
+missing; `omarchy.menu refresh` + `shell rescanPlugins` so Extender rows show without
+a manual shell restart; also scrubs orphan Extender rows for siblings removed without
 `uninstall.sh`.
 
 Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
@@ -229,7 +229,7 @@ Omarchy `plugin remove` never runs `uninstall.sh` (dir delete only) — always
 
 ```sh
 omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
-# Style → Boot Themes appears without a shell restart; carousel tiles warm (needs python-pillow)
+# Appearance → Extenders → Boot appears without a shell restart; carousel tiles warm (needs python-pillow)
 # Pick a loud theme; confirm the surface updates (reboot → Limine matches; uninstall restores Omarchy Tokyo Night)
 # plugin add alone + reboot → quiet restores wiring only; run install.sh / arm-all for deps/hooks
 # Parallel install.sh: shared Pillow flock; siblings only ask for their own missing pkgs
@@ -246,7 +246,7 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
   palette is Tokyo Night in practice, so pick **Tokyo Night** for install-day
   colours.
 - `omarchy refresh limine` replaces the whole conf from Omarchy defaults; run
-  Boot Themes again afterwards if you still want a themed palette.
+  Appearance → Extenders → Boot again afterwards if you still want a themed palette.
 
 ## Check
 
@@ -268,7 +268,7 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
   [OmaCursor](https://github.com/AlxWolfenstein97/omacursor),
   [OmaHud](https://github.com/AlxWolfenstein97/omahud),
   [Chroma](https://github.com/AlxWolfenstein97/chroma).
-- [Omarchy](https://omarchy.org/) — theme pipeline, Style menu image picker,
+- [Omarchy](https://omarchy.org/) — theme pipeline, Appearance menu image picker,
   and Limine defaults this plugin patches carefully.
 
 ## License

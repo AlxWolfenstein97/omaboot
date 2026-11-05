@@ -45,7 +45,7 @@ ask_pkg_drop() {
   for pkg in "${have[@]}"; do
     case $pkg in
       python-pillow)
-        note "python-pillow — Style carousel mockups (shared); MangoHud/goverlay/Lutris may need it"
+        note "python-pillow — Appearance carousel mockups (shared); MangoHud/goverlay/Lutris may need it"
         req=$(pacman -Qi python-pillow 2>/dev/null | awk -F': ' '/^Required By/{print $2}')
         note "  pacman Required By: ${req:-none}"
         ;;
