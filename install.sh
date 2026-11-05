@@ -137,15 +137,15 @@ pull_pkgs() {
   fi
 
   if ! command -v omarchy >/dev/null 2>&1; then
-    warn "OmaBoot needs ${missing[*]} for: Appearance → Extenders → Boot — Limine colour mockups + apply — install manually: pacman -S ${missing[*]}"
+    warn "OmaBoot needs ${missing[*]} for: Appearance → Extenders → Boot — Limine color mockups + apply — install manually: pacman -S ${missing[*]}"
     return 1
   fi
 
-  note "OmaBoot needs ${missing[*]} — Appearance → Extenders → Boot — Limine colour mockups + apply"
+  note "OmaBoot needs ${missing[*]} — Appearance → Extenders → Boot — Limine color mockups + apply"
   # Inline pkg add (interactive or --yes). Prompts stay in this TTY.
   printf '%s\n' "OmaBoot"
   printf '%s\n' "io.github.alxwolfenstein97.omaboot"
-  printf '%s\n' "Appearance → Extenders → Boot — Limine colour mockups + apply"
+  printf '%s\n' "Appearance → Extenders → Boot — Limine color mockups + apply"
   printf '%s\n' "────────────────────────────────"
   printf '%s\n' "Needs to install (sudo / pacman) — only packages missing on this system:"
   for pkg in "${missing[@]}"; do

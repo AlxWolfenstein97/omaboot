@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Menu + cache/state. Clears ### omaboot Limine colour block in this TTY (sudo)
+# Menu + cache/state. Clears ### omaboot Limine color block in this TTY (sudo)
 # + optional y/N pkg drop. --yes does both inline (no prompts). Prompts stay in this TTY.
 # Omarchy's plugin remove does not run this script.
 #
@@ -100,7 +100,7 @@ omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 if (( assume_yes )); then
   note "full wipe (--yes): resetting Limine paint inline"
   if "$here/bin/omaboot" clear; then
-    note "Omarchy default Limine colours restored"
+    note "Omarchy default Limine colors restored"
   else
     note "clear failed — limine.conf may still have ### omaboot markers"
   fi
@@ -113,7 +113,7 @@ if (( assume_yes )); then
 else
   note "resetting Limine paint (may prompt for sudo)"
   if "$here/bin/omaboot" clear; then
-    note "Omarchy default Limine colours restored"
+    note "Omarchy default Limine colors restored"
   else
     note "clear failed — limine.conf may still have ### omaboot markers"
   fi

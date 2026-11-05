@@ -122,7 +122,7 @@ else
   bad "preview fixture"
 fi
 
-# Append-once path: conf with no colour keys at all.
+# Append-once path: conf with no color keys at all.
 cat >"$tmp/limine-bare.conf" <<'EOF'
 default_entry: 1
 interface_branding: Custom Box
@@ -137,7 +137,7 @@ grep -q '### omaboot:start' "$tmp/limine-bare.conf" && pass "append block when m
 grep -q 'custom_flag=1' "$tmp/limine-bare.conf" && pass "bare cmdline kept" || bad "bare cmdline kept"
 grep -q 'interface_branding: Custom Box' "$tmp/limine-bare.conf" && pass "custom branding kept" || bad "custom branding kept"
 
-# clear → Omarchy default Tokyo Night colours, no ### omaboot markers
+# clear → Omarchy default Tokyo Night colors, no ### omaboot markers
 mkdir -p "$tmp/omarchy/default/limine"
 cp /usr/share/omarchy/default/limine/limine.conf "$tmp/omarchy/default/limine/limine.conf" 2>/dev/null \
   || cat >"$tmp/omarchy/default/limine/limine.conf" <<'EOF'

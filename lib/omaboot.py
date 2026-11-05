@@ -3,7 +3,7 @@
 
 Discovers every theme with a colors.toml (no extra theme assets required),
 renders centered Limine-style mockups for the Appearance carousel, and patches
-only a managed colour block in limine.conf (sudo). Boot entries and any
+only a managed color block in limine.conf (sudo). Boot entries and any
 custom cmdline stay untouched. Not hooked to theme-set — boot is not
 user-land and needs a password. Mockups are illustrative — Limine has no
 headless renderer, so these are not WYSIWYG boot screenshots.
@@ -366,7 +366,7 @@ def _is_managed_assignment(line: str) -> bool:
 
 
 def _strip_managed_outside_block(text: str) -> str:
-    """Drop loose managed colour lines and any prior omaboot block."""
+    """Drop loose managed color lines and any prior omaboot block."""
     # Remove existing managed block first.
     text = re.sub(
         re.escape(BLOCK_START) + r".*?" + re.escape(BLOCK_END) + r"\n?",
@@ -387,7 +387,7 @@ def _strip_managed_outside_block(text: str) -> str:
 
 
 def patch_limine_conf(existing: str, palette: dict[str, Any]) -> str:
-    """Insert or replace the managed colour block; preserve all other content.
+    """Insert or replace the managed color block; preserve all other content.
 
     Boot entries (lines starting with `/`), custom cmdline, iommu flags,
     timeout, branding text, etc. are never rewritten — only aesthetic keys.
@@ -932,12 +932,12 @@ def set_theme(slug: str, *, quiet: bool = False, dry_run: bool = False) -> int:
     return 0
 
 
-def omarchy_default_colour_stanza() -> str:
-    """Omarchy stock Limine colours (Tokyo Night) — no ### omaboot markers.
+def omarchy_default_color_stanza() -> str:
+    """Omarchy stock Limine colors (Tokyo Night) — no ### omaboot markers.
 
     Sourced from $OMARCHY_PATH/default/limine/limine.conf when present so
     uninstall/clear matches what a fresh Omarchy install paints, not bare
-    Limine built-in greys.
+    Limine built-in grays.
     """
     default = omarchy_path() / "default" / "limine" / "limine.conf"
     keys: dict[str, str] = {}
@@ -971,7 +971,7 @@ def omarchy_default_colour_stanza() -> str:
 
 
 def _insert_before_entries(existing: str, stanza: str) -> str:
-    """Insert a colour stanza before the first boot entry; preserve the rest."""
+    """Insert a color stanza before the first boot entry; preserve the rest."""
     if not stanza:
         return existing
     lines = existing.splitlines(keepends=True)
@@ -997,17 +997,17 @@ def _insert_before_entries(existing: str, stanza: str) -> str:
     return "".join(parts)
 
 
-def clear_limine_colours(*, quiet: bool = False, dry_run: bool = False) -> int:
-    """Strip omaboot markers and restore Omarchy default (Tokyo Night) colours.
+def clear_limine_colors(*, quiet: bool = False, dry_run: bool = False) -> int:
+    """Strip omaboot markers and restore Omarchy default (Tokyo Night) colors.
 
-    Bare Limine greys are not what Omarchy ships — uninstall / clear should
+    Bare Limine grays are not what Omarchy ships — uninstall / clear should
     leave the familiar Omarchy boot look, not stock Limine.
     """
     existing = read_limine_conf()
     has_block = BLOCK_START in existing
     has_loose = any(_is_managed_assignment(ln) for ln in existing.splitlines())
     cleaned = _strip_managed_outside_block(existing) if (has_block or has_loose) else existing
-    stanza = omarchy_default_colour_stanza()
+    stanza = omarchy_default_color_stanza()
     restored = _insert_before_entries(cleaned, stanza) if stanza else cleaned
     restored = re.sub(r"\n{3,}", "\n\n", restored)
     if not restored.endswith("\n"):
@@ -1017,7 +1017,7 @@ def clear_limine_colours(*, quiet: bool = False, dry_run: bool = False) -> int:
         return 0
     if restored == existing and not has_block and not has_loose:
         if not quiet:
-            note("limine.conf already looks like Omarchy default colours")
+            note("limine.conf already looks like Omarchy default colors")
         return 0
     write_limine_conf(restored)
     state = paths()["state"]
@@ -1025,7 +1025,7 @@ def clear_limine_colours(*, quiet: bool = False, dry_run: bool = False) -> int:
         path = state / name
         path.unlink(missing_ok=True)
     if not quiet:
-        note(f"restored Omarchy default (Tokyo Night) colours in {limine_conf_path()}")
+        note(f"restored Omarchy default (Tokyo Night) colors in {limine_conf_path()}")
         note("boot entries and cmdline left untouched; no ### omaboot markers")
     return 0
 
@@ -1132,7 +1132,7 @@ def install_menu_entry() -> None:
                 "icon": "󰣆",
                 "label": "Boot",
                 "aliases": ["boot", "limine", "bootloader"],
-                "description": "Preview Omarchy palettes on a Limine mockup and patch /boot/limine.conf colours (sudo)",
+                "description": "Preview Omarchy palettes on a Limine mockup and patch /boot/limine.conf colors (sudo)",
                 "action": menu_action(),
             },
         )
@@ -1196,7 +1196,7 @@ def cmd_set(args: argparse.Namespace) -> int:
 
 
 def cmd_clear(args: argparse.Namespace) -> int:
-    return clear_limine_colours(quiet=args.quiet, dry_run=args.dry_run)
+    return clear_limine_colors(quiet=args.quiet, dry_run=args.dry_run)
 
 
 def cmd_show(args: argparse.Namespace) -> int:
@@ -1264,7 +1264,7 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("theme", nargs="?", help="Theme slug; omit for all")
     preview.set_defaults(func=cmd_preview)
 
-    show = sub.add_parser("show", help="Print the managed limine colour block for a theme")
+    show = sub.add_parser("show", help="Print the managed limine color block for a theme")
     show.add_argument("theme", help="Theme slug")
     show.set_defaults(func=cmd_show)
 
@@ -1276,7 +1276,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     clear = sub.add_parser(
         "clear",
-        help="Restore Omarchy default (Tokyo Night) Limine colours; drop ### omaboot markers (sudo)",
+        help="Restore Omarchy default (Tokyo Night) Limine colors; drop ### omaboot markers (sudo)",
     )
     clear.add_argument("--quiet", action="store_true")
     clear.add_argument("--dry-run", action="store_true")

@@ -1,7 +1,7 @@
 # OmaBoot
 
 **Omarchy themes your desktop. OmaBoot carries the same palette into the Limine
-bootloader — mockup previews in the Appearance menu, then a managed colour block in
+bootloader — mockup previews in the Appearance menu, then a managed color block in
 `/boot/limine.conf`.**
 
 ![OmaBoot on Hackerman — Limine mockup wearing the Omarchy palette](preview.png)
@@ -27,9 +27,9 @@ making *another* theme is more worth it. Longer origin / stop-line:
 
 | Goal | What that means here |
 |------|----------------------|
-| Zero extra assets | No per-theme Limine art. Colours come from `colors.toml` alone. |
+| Zero extra assets | No per-theme Limine art. Colors come from `colors.toml` alone. |
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
-| True Theme Vibe | Mockups track **current** Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colours look like on bare metal. Still **not** a framebuffer capture. |
+| True Theme Vibe | Mockups track **current** Limine chrome + your theme’s hex — **much closer**, if not identical, to what those colors look like on bare metal. Still **not** a framebuffer capture. |
 | Carousel-safe | Mockups are 1536×864 (menu-images thumbnail size). Current Limine is dead-centered, so the 768×475 tile crop mostly shaves empty sides. |
 | Snappy pickers | Mockups warm in parallel across CPU cores and **skip tiles whose `colors.toml` / branding / layout haven’t changed** — reopen is near-instant. On par with Omarchy’s stock Appearance carousels; Cursors often feels even snappier. |
 
@@ -54,32 +54,32 @@ OmaCursor / OmaVT.
 - **Live theme discovery** — every Omarchy theme with a `colors.toml` under
   `~/.config/omarchy/themes` or `$OMARCHY_PATH/themes`.
 - **Mockups** — current Limine chrome (centered branding + help, snapshot tree
-  with `N | timestamp`, inverse selection, version footer) coloured from that
+  with `N | timestamp`, inverse selection, version footer) colored from that
   theme’s palette.
 - **Safe patch** — one `### omaboot:start` … `### omaboot:end` block in
   `/boot/limine.conf`. Appended once if missing; replaced as a whole when you
   change themes. Boot entries, timeout, branding *text*, and any custom cmdline
-  stay untouched — the patcher never rewrites non-colour lines.
+  stay untouched — the patcher never rewrites non-color lines.
 - **No theme-set hook** — applying needs a password; pick when you mean it.
 
 ## Mockups: True Theme Vibe (not theme-bundled WYSIWYG)
 
 Limine has no headless renderer, and we will not ask theme authors to ship boot
 screenshots. Instead the drawer in `lib/omaboot.py` paints a **single** Limine
-layout once, then recolours it from each theme’s `colors.toml`. At this point
+layout once, then recolors it from each theme’s `colors.toml`. At this point
 the Tokyo Night mockup is close enough that asking for a framebuffer feels like
 a joke — still not pixel-identical UEFI output, but the *vibe* is there.
 
 **How it was done**
 
-1. Grab a clean **current** Omarchy Limine screen in QEMU (crop the grey
+1. Grab a clean **current** Omarchy Limine screen in QEMU (crop the gray
    letterbox), on a real palette — Snapshots populated after a moment,
    `linux-omarchy` entry, **EFI fallback** sibling, selection on a snapshot row.
 2. Trace that chrome in Pillow: centered branding, help under the title,
    `-> linux-omarchy` / Snapshots tree, `[+] N | timestamp` rows, inverse
    selection, `EFI fallback`, package version footer. Dead-centered so the
    Appearance carousel crop barely matters.
-3. Recolour the same silhouette from every installed theme’s `colors.toml`.
+3. Recolor the same silhouette from every installed theme’s `colors.toml`.
    Themes stay palette-only; the plugin owns the art.
 
 The [System snapshots](https://omarchy.org/manual/system-snapshots/) page of the
@@ -90,7 +90,7 @@ captures instead.
 
 **Compare — real QEMU capture vs generated mockup (same chrome, Tokyo Night):**
 
-| Real Limine (QEMU — grey letterbox cropped) | OmaBoot mockup |
+| Real Limine (QEMU — gray letterbox cropped) | OmaBoot mockup |
 | --- | --- |
 | ![Real Omarchy Limine — Tokyo Night QEMU reference with linux-omarchy, Snapshots, EFI fallback](reference-limine-tokyo-night.png) | ![OmaBoot mockup — same layout, Tokyo Night from colors.toml](preview-tokyo-night.png) |
 
@@ -187,7 +187,7 @@ omarchy plugin enable io.github.alxwolfenstein97.omaboot
 2. On selection, the menu launches Omarchy’s floating terminal running `omaboot-set`
    (same privilege pattern as Unlock), which prompts for sudo and patches
    `/boot/limine.conf`. Install / uninstall / arm-all / wipe use the same TTY.
-3. Colour keys (`term_*`, `backdrop`, branding/help colours) live inside the
+3. Color keys (`term_*`, `backdrop`, branding/help colors) live inside the
    managed block. Everything else in the file is preserved.
 
 CLI:
@@ -206,8 +206,8 @@ omaboot current
 
 | Action | What happens |
 |--------|----------------|
-| `omarchy plugin disable …` | Shell service stops. No theme-set hook — last limine colour block stays. |
-| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Quiet Service only restores what was already armed — after wipe that’s nothing until a loud install. This TTY runs `omaboot clear` (sudo) — restores **Omarchy default Limine colours (Tokyo Night)**, drops `### omaboot` markers (not bare Limine greys). Optional y/N `pkg drop` of packages this install recorded pulling. |
+| `omarchy plugin disable …` | Shell service stops. No theme-set hook — last limine color block stays. |
+| `./uninstall.sh` then disable / remove | Menu + cache/state gone. Quiet Service only restores what was already armed — after wipe that’s nothing until a loud install. This TTY runs `omaboot clear` (sudo) — restores **Omarchy default Limine colors (Tokyo Night)**, drops `### omaboot` markers (not bare Limine grays). Optional y/N `pkg drop` of packages this install recorded pulling. |
 | `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it; may fail/stay if something else still requires it. TTY prompts show why + `pacman Required By`. |
 
 Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + menu consent come from interactive `install.sh`, `--yes`, or
@@ -244,7 +244,7 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omaboot.git --enable
   metal.
 - There is no separate Plymouth-style **Default** tile: Omarchy’s stock Limine
   palette is Tokyo Night in practice, so pick **Tokyo Night** for install-day
-  colours.
+  colors.
 - `omarchy refresh limine` replaces the whole conf from Omarchy defaults; run
   Appearance → Extenders → Boot again afterwards if you still want a themed palette.
 
@@ -258,7 +258,7 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omaboot/check.sh
 
 - **Layout reference:** [`reference-limine-tokyo-night.png`](reference-limine-tokyo-night.png)
   — QEMU capture of current Omarchy Limine on Tokyo Night (`linux-omarchy`,
-  Snapshots, EFI fallback; grey letterbox cropped). Compare mockup:
+  Snapshots, EFI fallback; gray letterbox cropped). Compare mockup:
   [`preview-tokyo-night.png`](preview-tokyo-night.png).
 - Hero mockup: official **Hackerman** theme (the loudest stock neon Omarchy
   ships).
