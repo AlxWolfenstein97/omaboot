@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.alxwolfenstein97.omaboot",
   "name": "OmaBoot",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "author": "AlxWolfenstein97",
   "license": "MIT",
   "description": "Appearance \u2192 Extenders \u2192 Boot: Limine boot color picker. Not broken \u2014 read the README to arm the Appearance menu after install.",

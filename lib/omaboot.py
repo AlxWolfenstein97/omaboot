@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -507,6 +508,7 @@ def atomic_write(path: Path, content: str | bytes) -> None:
             pass
 
 
+@lru_cache(maxsize=None)
 def try_font(size: int) -> ImageFont.ImageFont:
     candidates = [
         "/usr/share/fonts/liberation/LiberationMono-Regular.ttf",
@@ -774,7 +776,7 @@ def render_mockup(
     draw.text(((w - ver_w) // 2, h - 48), ver, font=font_ver, fill=version_rgb)
 
     dest.parent.mkdir(parents=True, exist_ok=True)
-    img.save(dest, format="PNG", optimize=True)
+    img.save(dest, format="PNG", compress_level=3)
     return dest
 
 
@@ -782,14 +784,20 @@ def preview_path(slug: str) -> Path:
     return paths()["cache"] / "previews" / f"{slugify(slug)}.png"
 
 
-def generate_preview(slug: str, branding: str | None = None, *, force: bool = False) -> Path:
+def generate_preview(
+    slug: str,
+    branding: str | None = None,
+    *,
+    force: bool = False,
+    version: str | None = None,
+) -> Path:
     dest = preview_path(slug)
     label = branding or "Omarchy Bootloader"
-    fp = _preview_fingerprint(slug, label)
+    fp = _preview_fingerprint(slug, label, ver=version)
     if not force and _preview_fresh(dest, fp):
         return dest
     palette = palette_from_theme(slug)
-    render_mockup(palette, dest, branding=label)
+    render_mockup(palette, dest, branding=label, version=version)
     _write_preview_meta(dest, fp)
     return dest
 
@@ -858,9 +866,14 @@ def _preview_pool(workers: int) -> ProcessPoolExecutor:
     return ProcessPoolExecutor(max_workers=workers, mp_context=ctx)
 
 
-def _warm_one_preview(job: tuple[str, str]) -> Path:
-    slug, branding = job
-    return generate_preview(slug, branding=branding, force=True)
+def _preload_render() -> None:
+    """Import Pillow before forking so every worker inherits it."""
+    Image._load()
+
+
+def _warm_one_preview(job: tuple[str, str, str]) -> Path:
+    slug, branding, version = job
+    return generate_preview(slug, branding=branding, force=True, version=version)
 
 
 def generate_all_previews(branding: str | None = None) -> list[Path]:
@@ -876,7 +889,7 @@ def generate_all_previews(branding: str | None = None) -> list[Path]:
     label = branding or "Omarchy Bootloader"
     ver = omarchy_pkg_version()
     dirty = [
-        (slug, label)
+        (slug, label, ver)
         for slug in wanted
         if not _preview_fresh(
             preview_path(slug), _preview_fingerprint(slug, label, ver=ver)
@@ -884,6 +897,7 @@ def generate_all_previews(branding: str | None = None) -> list[Path]:
     ]
     if not dirty:
         return out
+    _preload_render()
     workers = max(1, min(len(dirty), os.cpu_count() or 2))
     with _preview_pool(workers) as pool:
         futures = {pool.submit(_warm_one_preview, job): job[0] for job in dirty}
@@ -1220,6 +1234,10 @@ def cmd_switcher(_: argparse.Namespace) -> int:
 
     cmd = [
         "omarchy-menu-images",
+        # Our tiles are already 1536×864. Let the picker draw them immediately
+        # and warm omarchy-menu-images' JPEG cache in the background instead of
+        # blocking the open on a thumbnail pass.
+        "--lazy-thumbnails",
         "--print-name",
         "--show-labels",
         "--filterable",
